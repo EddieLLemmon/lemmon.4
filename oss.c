@@ -32,6 +32,8 @@ struct PCB
    int eventBlockedUntilNano; // when will this process become unblocked
  };
  
+ 
+ 
 struct PCB processTable[20];
 
 int main(int argc, char** argv)
