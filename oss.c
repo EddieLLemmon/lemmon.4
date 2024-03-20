@@ -41,7 +41,6 @@ struct Queue //Queue struct for processes
 {
  int pid;
  double priority;
- 
 }; 
 
 
@@ -50,7 +49,120 @@ struct PCB processTable[20];
 
 int main(int argc, char** argv)
 {
- Queue *q0, *q1, *q2;
+   int n = 0; //Number of children to be produced.
+  int s = 0; //Number of simultainious programs that can run
+  int t = 0; //Maximum number of seconds each child can run for.
+  int i = 0; //Amount of time between each child launch
+  int m = 0; //Counts how many children have terminated
+  int nc = 0; //Keeps tract of the next child in the message queue.
+  int sc = 0; //Counts how many children are currently running
+  int finished = 0;
+  char* filename;
+  FILE* file;
+  int opt;
+  int rsecs ,rnanosecs; //The random number of seconds, and nanosecondsfor each child.
+  const int key = ftok("./oss.c", 0); //Key for the program.
+  int shmid = shmget(key, sizeof(int) * 4, 0666|IPC_CREAT);
+  if (shmid <= 0)
+   {
+    printf("Error in SHMGET\n");
+    exit(1);
+   }
+   
+   int *shm; //The shared memory id is an array because the system clock holds multiple values.
+   shm  = shmat(shmid, 0, 0);
+   if (shm <= 0)
+    {
+     perror("Error in shmat!\n");
+     exit(1);
+    }
+    
+    int msqid;
+    key_t key2;
+    system("touch msgq.txt");
+    if ((key2 = ftok("msgq.txt", 1)) == -1) {
+    
+    perror("ftok error in message queue!\n");
+    exit(1);
+    }
+    
+    if ((msqid = msgget(key2, PERMS | IPC_CREAT)) == -1) {
+    
+    perror("msgget in parent!\n");
+    exit(1);
+    }
+    
+   
+    
+    while ((opt = getopt(argc, argv, ":hn:s:t:i:f:")) != -1)
+    {
+      switch (opt)
+       {
+         case 'h': //If option h is chosen, it will display the message and end the program.
+              help();
+              return 1;
+              break;
+         case 'n': //optarg will be the value of the respective command line argument.
+              n = atoi(optarg);
+              break;
+         case 's':
+              s = atoi(optarg);
+              break;
+         case 't':
+              t = atoi(optarg);
+              break;
+         case 'i':
+              i = atoi(optarg);
+              break;
+         case 'f':
+              filename = optarg;
+              break;
+         case '?':
+              printf("Unknown option: %c\n", optopt); //If the user enters an invalid option, the program will not start.
+              return 1;
+              break;
+         case ':':
+              printf("Missing arg for %c\n", optopt); //If the option is empty, the program will not start.
+              return 1;
+              break;
+       }
+    }
+    
+   if (n <= 0) //If the user enters an argument of 0 or less for an option, the program will not start.
+    {
+     printf("Error: Number of child processes cannot be less than!\n");
+     return 1;
+    }
+   if (s <= 0)
+    {
+     printf("Error: Number of maximum simultainious processes cannot be less than one!\n");
+     return 1;
+    }
+   
+   if (t <= 0)
+    {
+     printf("Error: Maximum bound of time for each process cannot be less than one!\n");
+     return 1;
+    }
+   if (i <= 0)
+    {
+     printf("Error: Number of milliseconds between child process cannot be less than one!\n");
+     return 1;
+    }
+   
+   file = fopen(filename, "w");
+    
+   shm[0] = 0; //Seconds
+   shm[1] = 0; //Nanoseconds
+   shm[2] = 0; //Milliseconds
+   int nanoholder = shm[1]; //Nanoholder will be used for remembering howmany nanoseconds have passed in each iteration
+   int tableget = 0; //Will be used for checking if it is time to print the process table.
+   char str[sizeof(int)]; //Will hold the amount of seconds in a char array
+   char str2[sizeof(int)]; //Will hold the nanoseconds
+   signal(SIGALRM, firstsignal); //First signal
+   signal(SIGINT, secondsignal); //Second signal
+   alarm(60); //Alarm goes off after 60 seconds.
+ Queue q0, q1, q2;
 }
 
 void help(void) //Help function 
@@ -103,4 +215,15 @@ void help(void) //Help function
   return j;
  }
  
- int filenumbercounter(FILE*);
+ int filenumbercounter(FILE* file)
+ {
+  int count = 0;
+  char c;
+  for (c = getc(file); c != EOF; c = getc(file))
+   {
+    if (c == '\n')
+    count++;
+   }
+   
+   return count;
+ }
