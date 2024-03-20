@@ -24,13 +24,19 @@ typedef struct msgbuffer {
  
 int main(int argc, char **argv)
 {
- 
+ int n = atoi(argv[1]); //Will count the seconds used for the system clock.
+ int m = atoi(argv[2]); //Will count the nano seconds used for the system clock.
+    
+ pid_t pid = getpid();
+ pid_t ppid = getppid();
+ buf.mType = pid;
+ buf.intData = pid;
 }
 
 
 int termearly(void)
 {
    srand(time(NULL));
-   
-   
+   int j = (rand() % (100 - 1 + 1)) + 1;
+   return j; 
 } 

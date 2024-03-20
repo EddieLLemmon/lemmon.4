@@ -24,6 +24,7 @@ static void secondsignal(int); //Second signal is a SIGINT signal that goes off 
 int getRandomsecs(int); //Function designed to get random amount of seconds in the range of 1 and the value of another number.int 
 int getRandomnanos(void); //Givs a random amount of nanoseconds
 void printTable(int*, FILE*); 
+int filenumbercounter(FILE*);
 
 struct PCB 
  {
@@ -94,7 +95,6 @@ void help(void) //Help function
   srand(time(NULL));
   int j = (rand() % (upper - 1 + 1)) + 1;
   return j;
-  
  }
  int getRandomnanos(void)
  {
@@ -102,3 +102,5 @@ void help(void) //Help function
   int j = (rand() % (999999999 - 1 + 1)) + 1;
   return j;
  }
+ 
+ int filenumbercounter(FILE*);
