@@ -29,7 +29,8 @@ static void firstsignal(int); //First signal is a SIGALRM signal that goes off a
 static void secondsignal(int); //Second signal is a SIGINT signal that goes off if the user presses CTRL+C
 int filenumbercounter(FILE*);
 int giveslice(int);
-
+void changepriority(int);
+void makeTable(void);
 struct PCB 
  {
    int occupied; //If the process is table is occupied
@@ -63,7 +64,7 @@ struct Queue* createQueue(unsigned capacity)
  
     // This is important, see the enqueue
     queue->rear = capacity - 1;
-    queue->array = (int*)malloc(
+    queue->array = (pid_t*)malloc(
         queue->capacity * sizeof(int));
     return queue;
 }
@@ -98,7 +99,7 @@ void enqueue(struct Queue* queue, int item)
 int dequeue(struct Queue* queue)
 {
     if (isEmpty(queue))
-        return INT_MIN;
+        return -1;
     int item = queue->array[queue->front];
     queue->front = (queue->front + 1)
                    % queue->capacity;
@@ -121,6 +122,16 @@ int rear(struct Queue* queue)
         return INT_MIN;
     return queue->array[queue->rear];
 }
+
+//The four queues; The three priorty based queues, alongside the blocked queue.
+   
+struct Queue* q0 = createQueue(20);
+struct Queue* q1 = createQueue(20);
+struct Queue* q2 = createQueue(20); 
+struct Queue* qb = createQueue(20); //Blocked Queue
+
+void block(Queue*, int);
+void unblock(int);
 
 struct PCB processTable[20];
 bool childready = true; //Will change it's value depending on if a child is ready to launch.
@@ -229,13 +240,6 @@ int main(int argc, char** argv)
      printf("Error: Number of milliseconds between child process cannot be less than one!\n");
      return 1;
     }
-    
-   //The four queues; The three priorty based queues, alongside the blocked queue.
-   
-   struct Queue* q0 = createQueue(20);
-   struct Queue* q1 = createQueue(20);
-   struct Queue* q2 = createQueue(20); 
-   struct Queue* qb = createQueue(20); //Blocked Queue
    
    file = fopen(filename, "w");
     
@@ -247,13 +251,19 @@ int main(int argc, char** argv)
    char str[sizeof(int)]; //Will hold the amount of seconds in a char array
    char str2[sizeof(int)]; //Will hold the nanoseconds
    
+   makeTable();
    signal(SIGALRM, firstsignal); //First signal
    signal(SIGINT, secondsignal); //Second signal
    alarm(60); //Alarm goes off after 60 seconds.
    
+   
+   
    while()
-    {
-    }
+   {
+     incrementClock(shm, i, 0);
+     
+     if
+   }
    
    fclose(file);
    shmdt(shm); //Detaching shared memory
@@ -334,6 +344,7 @@ void help(void) //Help function
   {
    printf("\n60 SECONDS HAVE PASSED: ELIMINATING ALL PROCESSES AND ENDING PROGRAM\n");
    got_signal = true;
+   stillChildrenToLaunch = false;
   }
   
  static void secondsignal(int s) //Second signal
@@ -341,6 +352,7 @@ void help(void) //Help function
    
    printf("\nPROGRAM ENDED: ELIMINATING ALL PROCESSES AND ENDING PROGRAM\n");
    got_signal = true;
+   stillChildrenToLaunch = false;
   }
   
  int giveslice(int priority)
@@ -374,3 +386,68 @@ void help(void) //Help function
     }
     
  }
+ 
+ void changepriority(int i)
+ {
+  if (processTable[i].priority <= 0)
+   {
+    enqueue(q0, (int)processTable[i].pid);
+    processTable[i].priority = 1;
+    return;
+   }
+   
+  if (processTable[i].priority == 1)
+  {
+   dequeue(q0);
+   enqueue(q1, (int)processTable[i].pid);
+   processTable[i].priority = 2;
+   return;
+  }
+  
+  else if (processTable[i].priority == 2)
+  {
+   dequeue(q1);
+   enqueue(q2, (int)processTable[i].pid);
+   processTable[i].priority = 3;
+   return;
+  }
+  
+  else if (processTable[i].priority == 3)
+  {
+   processTable[i].priority = 3;
+   return;
+  }
+ }
+ 
+ void block(Queue* q, int i)
+ {
+  
+    dequeue(q);
+    enqueue(qb, (int)processTable[i].pid);
+    processTable[i].blocked = 1;
+  
+ }
+ 
+ void unblock(int i)
+ {
+  dequeue(qb);
+  enqueue(q0, (int)processTable[i].pid);
+  processTable[i].blocked = 0;
+ }
+ 
+void makeTable(void)
+{
+ int i = 0;
+ for(i; i < 20; i++)
+  {
+   processTable[i].occupied = 0;
+   processTable[i].pid = 0;
+   processTable[i].startSeconds = 0;
+   processTable[i].startNano = 0;
+   processTable[i].priority = -1;
+   processTable[i].timeused = 0;
+   processTable[i].blocked = 0;
+   processTable[i].eventBlockedUntilSec; 
+   processTable[i].eventBlockedUntilNano;
+  }
+}

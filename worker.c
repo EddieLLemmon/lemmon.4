@@ -103,11 +103,15 @@ int main(int argc, char **argv)
       
       else if (decide == 3)
       {
-       buf.intData = timeused(buf);
+       buf.intData = -timeused(buf);
        i = 1;
       }
       
-      buf.mType ppid;
+      else if (decide == 1)
+       {
+        buf.intData = timeused(buf);
+        i = 1;
+       }
     
      if(msgsnd(msqid, &buf, sizeof(msgbuffer) - sizeof(long), 0) == -1)
       {
@@ -131,7 +135,7 @@ int TBC(int max, int min)
 int choice(void)
 {
  int action = TBC(100, 0);
- if(action < 80)
+ if(action < 70)
   return 1;
  if(action <= 99)
   return 2;
