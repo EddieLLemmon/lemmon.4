@@ -14,9 +14,6 @@
 
 #define PERMS 0644
 
-int ifterm(void); //Determines if the process will terminate
-int termslice(int); //If the process will terminate, will determine how much of it's timeslice it used
-int ifblock(void); //If the process has been blocked
 
 typedef struct msgbuffer {
  int intData;
@@ -24,16 +21,21 @@ typedef struct msgbuffer {
  char strData[100];
  } msgbuffer;
  
+int TBC(int, int); //Random number generater that determines if a process will complete it's timeslice, be blocked, or 
+int choice(void); //Determines what choice the process will make based on TBC
+int timeused(msgbuffer);
+ 
 int main(int argc, char **argv)
 {
+ msgbuffer buf;
  int n = atoi(argv[1]); //Will count the seconds used for the system clock.
  int m = atoi(argv[2]); //Will count the nano seconds used for the system clock.
  int rcvtime; //Time that will be received by oss.c
     
  pid_t pid = getpid();
  pid_t ppid = getppid();
- buf.mType = pid;
- buf.intData = pid;
+ buf.mType = 1;
+ buf.intData = 0;
  
    if (argc != 3) //If the argument count is anything other than 3, the program will cancel.
     {
@@ -77,28 +79,67 @@ int main(int argc, char **argv)
     perror("msgget in child!\n");
     exit(1);
     }
+
+   int i = 0 //I is modified so that it instead will act as a flag to indicate termination;
+   
+   while(!i)
+    {
+     int msgwait = 0;
+     
+     while(!msgwait)
+      {
+       if(msgrcv(msqid, &buf, sizeof(msgbuffer), pid, 0) >= 0)
+       {
+        msgwait = 1;
+       }
+      }
+      
+      int decide = choice();
+      
+      if(decide == 2)
+      {
+       buf.intData = timeused(buf);
+      }
+      
+      else if (decide == 3)
+      {
+       buf.intData = timeused(buf);
+       i = 1;
+      }
+      
+      buf.mType ppid;
     
+     if(msgsnd(msqid, &buf, sizeof(msgbuffer) - sizeof(long), 0) == -1)
+      {
+       perror("Failed to send message!\n");
+       exit(1);
+      }
+    }
+   shmdt(shm); //Freeing shared memory.
+   return 0;
     
 }
 
 
-int ifterm(void)
+int TBC(int max, int min)
 {
    srand(time(NULL));
-   int j = (rand() % (100 - 1 + 1)) + 1;
+   int j = (rand() % (max - min + 1)) + 1;
    return j; 
 } 
 
-int termslice(int p)
+int choice(void)
 {
- srand(time(NULL));
- int j = (rand() % (p - 1 + 1)) + 1;
- return j;
+ int action = TBC(100, 0);
+ if(action < 80)
+  return 1;
+ if(action <= 99)
+  return 2;
+ return 3;
 }
 
-int ifblock(void)
+int timeused(msgbuffer buf)
 {
- srand(time(NULL));
- int j = (rand() % (100 - 1 + 1)) + 1;
- return j;
+ int time = TBC(buf.intData, 1);
+ return time;
 }

@@ -119,6 +119,8 @@ int rear(struct Queue* queue)
         return INT_MIN;
     return queue->array[queue->rear];
 }
+
+
  
 struct PCB processTable[20];
 
