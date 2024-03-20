@@ -6,6 +6,7 @@
 #include <sys/ipc.h>
 #include <sys/msg.h>
 #include <time.h>
+#include <limits.h>
 #include <signal.h>
 #include <string.h>
 #include <errno.h>
@@ -28,6 +29,7 @@ static void firstsignal(int); //First signal is a SIGALRM signal that goes off a
 static void secondsignal(int); //Second signal is a SIGINT signal that goes off if the user presses CTRL+C
 int filenumbercounter(FILE*);
 
+
 struct PCB 
  {
    int occupied; //If the process is table is occupied
@@ -39,13 +41,84 @@ struct PCB
    int eventBlockedUntilNano; // when will this process become unblocked
  };
  
-struct MLFQ //Queue struct for processes
+//Queue struct and its associated functions all come from https://www.geeksforgeeks.org/introduction-and-array-implementation-of-queue/
+// A structure to represent a queue
+struct Queue {
+    int front, rear, size;
+    unsigned capacity;
+    int* array;
+};
+ 
+// function to create a queue
+// of given capacity.
+// It initializes size of queue as 0
+struct Queue* createQueue(unsigned capacity)
 {
- pid_t pid[20]; //The process id of each element of the queue
- int ms; //The millisecond priority of each queue
-}; 
-
-
+    struct Queue* queue = (struct Queue*)malloc(
+        sizeof(struct Queue));
+    queue->capacity = capacity;
+    queue->front = queue->size = 0;
+ 
+    // This is important, see the enqueue
+    queue->rear = capacity - 1;
+    queue->array = (int*)malloc(
+        queue->capacity * sizeof(int));
+    return queue;
+}
+ 
+// Queue is full when size becomes
+// equal to the capacity
+int isFull(struct Queue* queue)
+{
+    return (queue->size == queue->capacity);
+}
+ 
+// Queue is empty when size is 0
+int isEmpty(struct Queue* queue)
+{
+    return (queue->size == 0);
+}
+ 
+// Function to add an item to the queue.
+// It changes rear and size
+void enqueue(struct Queue* queue, int item)
+{
+    if (isFull(queue))
+        return;
+    queue->rear = (queue->rear + 1)
+                  % queue->capacity;
+    queue->array[queue->rear] = item;
+    queue->size = queue->size + 1;
+}
+ 
+// Function to remove an item from queue.
+// It changes front and size
+int dequeue(struct Queue* queue)
+{
+    if (isEmpty(queue))
+        return INT_MIN;
+    int item = queue->array[queue->front];
+    queue->front = (queue->front + 1)
+                   % queue->capacity;
+    queue->size = queue->size - 1;
+    return item;
+}
+ 
+// Function to get front of queue
+int front(struct Queue* queue)
+{
+    if (isEmpty(queue))
+        return INT_MIN;
+    return queue->array[queue->front];
+}
+ 
+// Function to get rear of queue
+int rear(struct Queue* queue)
+{
+    if (isEmpty(queue))
+        return INT_MIN;
+    return queue->array[queue->rear];
+}
  
 struct PCB processTable[20];
 
@@ -152,10 +225,9 @@ int main(int argc, char** argv)
      return 1;
     }
    
-   struct MLFQ q0, q1, q2;
-   q0.ms = HP;
-   q1.ms = MP;
-   q2.ms = LP; 
+   struct Queue* q0 = createQueue(20);
+   struct Queue* q1 = createQueue(20);
+   struct Queue* q2 = createQueue(20); 
    
    file = fopen(filename, "w");
     
