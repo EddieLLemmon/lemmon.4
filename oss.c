@@ -28,7 +28,7 @@ void printTable(int*, FILE*);
 static void firstsignal(int); //First signal is a SIGALRM signal that goes off after 60 seconds pass
 static void secondsignal(int); //Second signal is a SIGINT signal that goes off if the user presses CTRL+C
 int filenumbercounter(FILE*);
-
+int giveslice(int);
 
 struct PCB 
  {
@@ -36,6 +36,8 @@ struct PCB
    pid_t pid;
    int startSeconds;
    int startNano;
+   int priority;
+   int timeused; //The amount of remaining time used for a process that decides to terminate early.
    int blocked; // whether process is blocked
    int eventBlockedUntilSec; // when will this process become unblocked
    int eventBlockedUntilNano; // when will this process become unblocked
@@ -120,9 +122,10 @@ int rear(struct Queue* queue)
     return queue->array[queue->rear];
 }
 
-
- 
 struct PCB processTable[20];
+bool childready = true; //Will change it's value depending on if a child is ready to launch.
+bool got_signal = false; //Signal for when the program ends
+bool stillChildrenToLaunch = true; //Will detect if there are still children to launch in the program.
 
 int main(int argc, char** argv)
 {
@@ -226,10 +229,13 @@ int main(int argc, char** argv)
      printf("Error: Number of milliseconds between child process cannot be less than one!\n");
      return 1;
     }
+    
+   //The four queues; The three priorty based queues, alongside the blocked queue.
    
    struct Queue* q0 = createQueue(20);
    struct Queue* q1 = createQueue(20);
    struct Queue* q2 = createQueue(20); 
+   struct Queue* qb = createQueue(20); //Blocked Queue
    
    file = fopen(filename, "w");
     
@@ -244,6 +250,10 @@ int main(int argc, char** argv)
    signal(SIGALRM, firstsignal); //First signal
    signal(SIGINT, secondsignal); //Second signal
    alarm(60); //Alarm goes off after 60 seconds.
+   
+   while()
+    {
+    }
    
    fclose(file);
    shmdt(shm); //Detaching shared memory
@@ -326,9 +336,41 @@ void help(void) //Help function
    got_signal = true;
   }
   
-   static void secondsignal(int s) //Second signal
+ static void secondsignal(int s) //Second signal
   {
    
    printf("\nPROGRAM ENDED: ELIMINATING ALL PROCESSES AND ENDING PROGRAM\n");
    got_signal = true;
   }
+  
+ int giveslice(int priority)
+ {
+  int slice;
+  
+  switch(priority)
+  {
+   case 1:
+         slice = HP;
+         break;
+   case 2:
+         slice = MP;
+         break;
+   case 3: 
+         slice = LP;
+         break;
+  }
+  
+  return slice;
+ }
+ 
+ void printTable(int* shm) //Prints th oss data and data for each of the children.
+ {
+    printf("OSS PID: %d SysClockS: %d SysClockNano: %d\n", getpid(), shm[0], shm[1]);
+    printf("Process Table\n");
+    printf("Entry  Occupied  PID  StartS  StartN\n");
+   for(int q = 0; q < 20; q++)
+    {
+     printf("%d       %d      %d   %d   %d\n", (1 + q), processTable[q].occupied, processTable[q].pid, processTable[q].startSeconds,        processTable[q].startNano);
+    }
+    
+ }
