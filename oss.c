@@ -24,6 +24,8 @@ static void secondsignal(int); //Second signal is a SIGINT signal that goes off 
 int getRandomsecs(int); //Function designed to get random amount of seconds in the range of 1 and the value of another number.int 
 int getRandomnanos(void); //Givs a random amount of nanoseconds
 void printTable(int*, FILE*); 
+static void firstsignal(int); //First signal is a SIGALRM signal that goes off after 60 seconds pass
+static void secondsignal(int); //Second signal is a SIGINT signal that goes off if the user presses CTRL+C
 int filenumbercounter(FILE*);
 
 struct PCB 
@@ -162,7 +164,16 @@ int main(int argc, char** argv)
    signal(SIGALRM, firstsignal); //First signal
    signal(SIGINT, secondsignal); //Second signal
    alarm(60); //Alarm goes off after 60 seconds.
- Queue q0, q1, q2;
+   
+   fclose(file);
+   shmdt(shm); //Detaching shared memory
+   shmctl(shmid,IPC_RMID,NULL); //Freeing memory
+   if (msgctl(msqid, IPC_RMID, NULL) == -1){
+    perror("msgctl failed!\n");
+    exit(1);
+   }
+   
+   return 0;
 }
 
 void help(void) //Help function 
@@ -208,6 +219,7 @@ void help(void) //Help function
   int j = (rand() % (upper - 1 + 1)) + 1;
   return j;
  }
+ 
  int getRandomnanos(void)
  {
   srand(time(NULL));
@@ -227,3 +239,16 @@ void help(void) //Help function
    
    return count;
  }
+ 
+  static void firstsignal(int s) //First signal
+  {
+   printf("\n60 SECONDS HAVE PASSED: ELIMINATING ALL PROCESSES AND ENDING PROGRAM\n");
+   got_signal = true;
+  }
+  
+   static void secondsignal(int s) //Second signal
+  {
+   
+   printf("\nPROGRAM ENDED: ELIMINATING ALL PROCESSES AND ENDING PROGRAM\n");
+   got_signal = true;
+  }
