@@ -14,9 +14,9 @@
 
 #define PERMS 0644
 
-int termearly(void);
-
-int timeslice(int);
+int ifterm(void); //Determines if the process will terminate
+int termslice(int); //If the process will terminate, will determine how much of it's timeslice it used
+int ifblock(void); //If the process has been blocked
 
 typedef struct msgbuffer {
  int intData;
@@ -28,6 +28,7 @@ int main(int argc, char **argv)
 {
  int n = atoi(argv[1]); //Will count the seconds used for the system clock.
  int m = atoi(argv[2]); //Will count the nano seconds used for the system clock.
+ int rcvtime; //Time that will be received by oss.c
     
  pid_t pid = getpid();
  pid_t ppid = getppid();
@@ -81,16 +82,23 @@ int main(int argc, char **argv)
 }
 
 
-int termearly(void)
+int ifterm(void)
 {
    srand(time(NULL));
    int j = (rand() % (100 - 1 + 1)) + 1;
    return j; 
 } 
 
-int timeslice(int slice)
+int termslice(int p)
 {
  srand(time(NULL));
- int j = (rand() % (slice - 1 + 1)) + 1;
+ int j = (rand() % (p - 1 + 1)) + 1;
+ return j;
+}
+
+int ifblock(void)
+{
+ srand(time(NULL));
+ int j = (rand() % (100 - 1 + 1)) + 1;
  return j;
 }

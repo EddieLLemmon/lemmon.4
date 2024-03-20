@@ -41,13 +41,8 @@ struct PCB
  
 struct MLFQ //Queue struct for processes
 {
- int priority;
- pid_t pid;
- int wait_time;
- int burst_time;
- int turn_time;
- int remain_time;
- int arrival_time;
+ pid_t pid[20]; //The process id of each element of the queue
+ int ms; //The millisecond priority of each queue
 }; 
 
 
@@ -157,7 +152,10 @@ int main(int argc, char** argv)
      return 1;
     }
    
-   struct MLFQ *q0, q1, q2;
+   struct MLFQ q0, q1, q2;
+   q0.ms = HP;
+   q1.ms = MP;
+   q2.ms = LP; 
    
    file = fopen(filename, "w");
     
