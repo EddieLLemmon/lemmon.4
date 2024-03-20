@@ -39,10 +39,15 @@ struct PCB
    int eventBlockedUntilNano; // when will this process become unblocked
  };
  
-struct Queue //Queue struct for processes
+struct MLFQ //Queue struct for processes
 {
- int pid;
- double priority;
+ int priority;
+ pid_t pid;
+ int wait_time;
+ int burst_time;
+ int turn_time;
+ int remain_time;
+ int arrival_time;
 }; 
 
 
@@ -51,7 +56,7 @@ struct PCB processTable[20];
 
 int main(int argc, char** argv)
 {
-   int n = 0; //Number of children to be produced.
+  int n = 0; //Number of children to be produced.
   int s = 0; //Number of simultainious programs that can run
   int t = 0; //Maximum number of seconds each child can run for.
   int i = 0; //Amount of time between each child launch
@@ -152,6 +157,8 @@ int main(int argc, char** argv)
      return 1;
     }
    
+   struct MLFQ *q0, q1, q2;
+   
    file = fopen(filename, "w");
     
    shm[0] = 0; //Seconds
@@ -161,6 +168,7 @@ int main(int argc, char** argv)
    int tableget = 0; //Will be used for checking if it is time to print the process table.
    char str[sizeof(int)]; //Will hold the amount of seconds in a char array
    char str2[sizeof(int)]; //Will hold the nanoseconds
+   
    signal(SIGALRM, firstsignal); //First signal
    signal(SIGINT, secondsignal); //Second signal
    alarm(60); //Alarm goes off after 60 seconds.
@@ -190,14 +198,14 @@ void help(void) //Help function
  void incrementClock(int* shm, int i, int*nanoholder, int sc)
  {
  
-  shm[1] += 1000
+  shm[1] += 10000 + sc;
  
  
   if(abs(shm[1] - *nanoholder) >= 1000000) //One million nanoseconds is equal to a millisecond.
    {
+    for(int i = 0; i < (shm[1] / 1000000); i++)
      shm[2] += 1;
      *nanoholder = shm[1];
-     printf("%d\n", shm[2]);
    }
    
   if (shm[2] >= i) //Milliseconds are used to control how often a child is launched.

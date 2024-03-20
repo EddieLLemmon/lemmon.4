@@ -16,6 +16,8 @@
 
 int termearly(void);
 
+int timeslice(int);
+
 typedef struct msgbuffer {
  int intData;
  long mType;
@@ -31,6 +33,51 @@ int main(int argc, char **argv)
  pid_t ppid = getppid();
  buf.mType = pid;
  buf.intData = pid;
+ 
+   if (argc != 3) //If the argument count is anything other than 3, the program will cancel.
+    {
+     printf("Error: Must enter two command line arguments!\n");
+     exit(0);
+    } 
+    
+    if (n <= 0 || m <= 0) //User cannot enter non-positive integers as command line arguments.
+    {
+     printf("Error: command line arguments must be positive integers!\n");
+     exit(0);   
+    }
+    
+    const int key = ftok("./oss.c", 0); //The file  used for sharing memory.
+    int shmid = shmget(key, sizeof(int) * 4, 0666); //Allocated memory associated with key.
+    
+    if (shmid <= 0)
+     {
+      printf("Error with SHMGET in child\n");
+      exit(1);
+     }
+     
+    int *shm = shmat(shmid, 0, 0); //Attaching key to memory
+
+    if (shm <= 0)
+     {
+      printf("Error with shmat\n");
+      exit(1);
+     }
+     
+    int msqid = 0;
+    key_t key2;
+    if ((key2 = ftok("msgq.txt", 1)) == -1) {
+    
+    perror("ftok error in message queue!\n");
+    exit(1);
+    }
+    
+    if ((msqid = msgget(key2, PERMS)) == -1) {
+    
+    perror("msgget in child!\n");
+    exit(1);
+    }
+    
+    
 }
 
 
@@ -40,3 +87,10 @@ int termearly(void)
    int j = (rand() % (100 - 1 + 1)) + 1;
    return j; 
 } 
+
+int timeslice(int slice)
+{
+ srand(time(NULL));
+ int j = (rand() % (slice - 1 + 1)) + 1;
+ return j;
+}
