@@ -458,7 +458,14 @@ void help(void) //Help function
  
  void block()
  {
- 
+   int entry;
+   for(int count = 0; count < 20; count++
+   {
+    if(qb->array[count] != -1)
+    {
+     
+    }
+   }
  }
  
  
