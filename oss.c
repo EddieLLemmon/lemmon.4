@@ -32,7 +32,7 @@ int giveslice(int);
 void changepriority(int);
 void makeTable(void);
 int PCB_Space(void);
-bool childT(int status, int size);
+
 
 struct PCB 
  {
@@ -140,7 +140,9 @@ struct Queue* q1 = createQueue(20);
 struct Queue* q2 = createQueue(20); 
 struct Queue* qb = createQueue(20); //Blocked Queue
 
-void block(Queue*, int);
+int nextChild();
+
+void block(Queue*, int, int*);
 void unblock(int);
 
 struct PCB processTable[20];
@@ -270,7 +272,7 @@ int main(int argc, char** argv)
    
   
    
-   while()
+   while(stillChildrenToLaunch)
    {
      incrementClock(shm, i, 0);
      
@@ -280,13 +282,22 @@ int main(int argc, char** argv)
       printTable(shm);
      }
      
+     
      if (!isEmpty(qb))
+     {
+     }
      
      else if(!isEmpty(q0))
+     {
+     }
      
      else if(!isEmpty(q1))
+     {
+     }
      
      else if(!isEmpty(q2))
+     {
+     }
      
    }
    
@@ -444,12 +455,14 @@ void help(void) //Help function
   }
  }
  
- void block(Queue* q, int i)
+ void block(Queue* q, int i, int* shm)
  {
   
     dequeue(q);
     enqueue(qb, (int)processTable[i].pid);
     processTable[i].blocked = 1;
+    processTable[i].eventBlockedUntilSec += shm[1];
+    processTable[i].eventBlockedUntilNano += shm[1];
   
  }
  
@@ -472,8 +485,8 @@ void makeTable(void)
    processTable[i].priority = -1;
    processTable[i].timeused = 0;
    processTable[i].blocked = 0;
-   processTable[i].eventBlockedUntilSec; 
-   processTable[i].eventBlockedUntilNano;
+   processTable[i].eventBlockedUntilSec = 0; 
+   processTable[i].eventBlockedUntilNano = 0;
   }
 }
 
@@ -490,7 +503,27 @@ int PCB_Space(void)
  return -1;
 }
 
-bool childT(int status, int size)
+int nextChild()
 {
+ int child;
  
+ if(!isEmpty(q0))
+ {
+  child = front(q0);
+  return child;
+ }
+ 
+ else if (!isEmpty(q1))
+ {
+  child = front(q1);
+  return child;
+ }
+ 
+ else if (!isEmpty(q2))
+ {
+  child = front(q2);
+  return child;
+ }
+ 
+ else return -1;
 }
