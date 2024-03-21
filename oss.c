@@ -29,13 +29,15 @@ static void firstsignal(int); //First signal is a SIGALRM signal that goes off a
 static void secondsignal(int); //Second signal is a SIGINT signal that goes off if the user presses CTRL+C
 int filenumbercounter(FILE*);
 int giveslice(int);
-pid_t getpriority();
+pid_t getpriority(void);
 void makeTable(void);
 int PCB_Space(void);
 void launch(int, int, int, int*);
 int numOfChild(int, int);
 void pidget(pid_t, int*);
 int getIndex(pid_t)
+
+int priority;
 
 char str[sizeof(int)]; //Will hold the amount of seconds in a char array
 char str2[sizeof(int)]; //Will hold the nanoseconds
@@ -46,7 +48,6 @@ struct PCB
    pid_t pid;
    int startSeconds;
    int startNano;
-   int priority;
    int timeused; //The amount of remaining time used for a process that decides to terminate early.
    int blocked; // whether process is blocked
    int eventBlockedUntilSec; // when will this process become unblocked
@@ -306,6 +307,8 @@ int main(int argc, char** argv)
      
      pid_t priority;
      
+     priority = getpriority();
+     
      
    }
    
@@ -429,9 +432,14 @@ void help(void) //Help function
     
  }
  
- pid_t getpriority(int i)
+ pid_t getpriority(void)
  {
- 
+   pid_t pid = -1;
+   
+   if(!isEmpty(q1))
+    {
+     pid = front(q1);
+    }
  }
  
  void block(int * shm)
@@ -479,7 +487,6 @@ void makeTable(void)
    processTable[i].pid = 0;
    processTable[i].startSeconds = 0;
    processTable[i].startNano = 0;
-   processTable[i].priority = -1;
    processTable[i].timeused = 0;
    processTable[i].blocked = 0;
    processTable[i].eventBlockedUntilSec = 0; 
