@@ -151,7 +151,8 @@ void unblock(int);
 struct PCB processTable[20];
 bool childready = true; //Will change it's value depending on if a child is ready to launch.
 bool got_signal = false; //Signal for when the program ends
-bool stillChildrenToLaunch = true; //Will detect if there are still children to launch in the program.
+int stillChildrenToLaunch(); //Will detect if there are still children to launch in the program.
+int childrenStillRunning();
 
 int main(int argc, char** argv)
 {
@@ -284,39 +285,8 @@ int main(int argc, char** argv)
    signal(SIGALRM, firstsignal); //First signal
    signal(SIGINT, secondsignal); //Second signal
    alarm(60); //Alarm goes off after 60 seconds.
-   
-   
-   while(sc < s) //This loop is used for initializing the children; without it the program would get a shmget error.
-   {
-     pid_t pidcount = fork();
-         if (pidcount == 0)
-          {
-           if(childready == true) //New child will only launch if childready is true;
-           {
-            childready = false;
-            rsecs = getRandomsecs(t); //Produces up to t seconds.
-            rnanosecs = getRandomnanos(); //Produces a random number of nanoseconds/
-            snprintf(str, sizeof(int), "%d", rsecs);
-            snprintf(str2, sizeof(int), "%d", rnanosecs);
-            execlp("./worker", "./worker", str, str2, NULL);
-            exit(1);
-           }
-          }
-      else //If the child hasn't been terminated, it will be put in the process table.
-      {
-        processTable[m].occupied = 1;
-        processTable[m].pid = pidcount;
-        processTable[m].startSeconds = shm[0];
-        processTable[m].startNano = shm[1];
-        m++;
-        sc++;
-
-      }
-   }
-
-  
-   
-   while(stillChildrenToLaunch)
+ 
+   while(stillChildrenToLaunch() && childrenStillRunning())
    {
      child = nextChild();
      incrementClock(shm, i, &nanoholder, 0);
@@ -459,7 +429,6 @@ void help(void) //Help function
   {
    printf("\n60 SECONDS HAVE PASSED: ELIMINATING ALL PROCESSES AND ENDING PROGRAM\n");
    got_signal = true;
-   stillChildrenToLaunch = false;
   }
   
  static void secondsignal(int s) //Second signal
@@ -467,7 +436,6 @@ void help(void) //Help function
    
    printf("\nPROGRAM ENDED: ELIMINATING ALL PROCESSES AND ENDING PROGRAM\n");
    got_signal = true;
-   stillChildrenToLaunch = false;
   }
   
  int giveslice(int priority)
@@ -605,4 +573,21 @@ int nextChild()
  }
  
  else return -1;
+}
+
+int stillChildrenToLaunch()
+{
+ if(processTable[19].pid == 0)
+  return 1;
+  
+  return 0;
+}
+int childrenStillRunning()
+{
+ for(int count = 0; count < 20; count++)
+ {
+  if(processTable[count].occupied)
+  return 1;
+ }
+  return 0;
 }
