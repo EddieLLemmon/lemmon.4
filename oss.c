@@ -32,7 +32,7 @@ int giveslice(int);
 void changepriority(int);
 void makeTable(void);
 int PCB_Space(void);
-bool childT(int status, int size);
+bool childT(int status, int size);k
 
 struct PCB 
  {
