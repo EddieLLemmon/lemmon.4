@@ -148,6 +148,8 @@ struct Queue* q1 = createQueue(20);
 struct Queue* q2 = createQueue(20); 
 struct Queue* qb = createQueue(20); //Blocked Queue
 
+schedule(int, msgbuffer);
+
 int nextChild();
 
 void block(int*);
@@ -309,6 +311,8 @@ int main(int argc, char** argv)
      
      priority = getpriority();
      
+     int sendmsg;
+     sendmsg = 
      
    }
    
@@ -439,7 +443,25 @@ void help(void) //Help function
    if(!isEmpty(q1))
     {
      pid = front(q1);
+     priorty = 1;
+     dequeue(q1);
+     enqueue(q2, (int)pid);
     }
+    
+   else if(!isEmpty(q2))
+    {
+     pid = front(q2);
+     priority = 2;
+     dequeue(q2);
+     enqueue(q3, (int)pid);
+    }
+    
+   else if(!isEmpty(q3))
+    {
+     pid = front(q3);
+     priority = 3;
+    }
+   return pid;
  }
  
  void block(int * shm)
@@ -619,4 +641,9 @@ int getIndex(pid_t pid)
    return count;
  }
  return 0;
+}
+
+schedule(int, msgbuffer)
+{
+ 
 }
