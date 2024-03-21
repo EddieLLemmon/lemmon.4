@@ -148,7 +148,7 @@ struct Queue* q1 = createQueue(20);
 struct Queue* q2 = createQueue(20); 
 struct Queue* qb = createQueue(20); //Blocked Queue
 
-schedule(int, msgbuffer);
+schedule(pid_t, msgbuffer, int*, int,  int, int);
 
 int nextChild();
 
@@ -312,7 +312,7 @@ int main(int argc, char** argv)
      priority = getpriority();
      
      int sendmsg;
-     sendmsg = 
+     sendmsg = schedule(priority, buf, shm, i, &nanoholder, 500000);
      
    }
    
@@ -643,7 +643,17 @@ int getIndex(pid_t pid)
  return 0;
 }
 
-schedule(int, msgbuffer)
+schedule(pid_t pid, msgbuffer, int* shm, int i, int nano, int clock)
 {
+ incrementClock(shm, i, &nano, clock);
  
+ if(pid == -1)
+ {
+  return 0;
+ }
+ 
+ buf.mtype = process;
+ if(priority == 1)
+  {
+  }
 }
