@@ -31,6 +31,9 @@ int filenumbercounter(FILE*);
 int giveslice(int);
 void changepriority(int);
 void makeTable(void);
+int PCB_Space(void);
+bool childT(int status, int size);
+
 struct PCB 
  {
    int occupied; //If the process is table is occupied
@@ -262,7 +265,13 @@ int main(int argc, char** argv)
    {
      incrementClock(shm, i, 0);
      
-     if
+     if(isEmpty(q0)
+      {
+       if(isEmpty(q1)
+        {
+          
+        }
+      }
    }
    
    fclose(file);
@@ -450,4 +459,22 @@ void makeTable(void)
    processTable[i].eventBlockedUntilSec; 
    processTable[i].eventBlockedUntilNano;
   }
+}
+
+int PCB_Space(void)
+{
+ int i = 0;
+ 
+ for(i; i<20; i++)
+ {
+  if(processTable[i].occupied == 0)
+   return i;
+ }
+ 
+ return -1;
+}
+
+bool childT(int status, int size)
+{
+ 
 }
