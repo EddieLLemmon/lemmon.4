@@ -33,7 +33,9 @@ void changepriority(int);
 void makeTable(void);
 int PCB_Space(void);
 
-
+char str[sizeof(int)]; //Will hold the amount of seconds in a char array
+char str2[sizeof(int)]; //Will hold the nanoseconds
+int rsecs ,rnanosecs; //The random number of seconds, and nanosecondsfor each child.
 struct PCB 
  {
    int occupied; //If the process is table is occupied
@@ -53,6 +55,7 @@ struct PCB
  int quantum;
  char strData[100];
  } msgbuffer;
+ 
  
 //Queue struct and its associated functions all come from https://www.geeksforgeeks.org/introduction-and-array-implementation-of-queue/
 // A structure to represent a queue
@@ -74,7 +77,7 @@ struct Queue* createQueue(unsigned capacity)
  
     // This is important, see the enqueue
     queue->rear = capacity - 1;
-    queue->array = (pid_t*)malloc(
+    queue->array = (int*)malloc(
         queue->capacity * sizeof(int));
     return queue;
 }
@@ -160,11 +163,10 @@ int main(int argc, char** argv)
   int nc = 0; //Keeps tract of the next child in the message queue.
   int sc = 0; //Counts how many children are currently running
   int finished = 0;
-  char* filename;
-  pid_t getpid;
+  int slot = 0;
+  char* filename = NULL;
   FILE* file;
   int opt;
-  int rsecs ,rnanosecs; //The random number of seconds, and nanosecondsfor each child.
   const int key = ftok("./oss.c", 0); //Key for the program.
   int shmid = shmget(key, sizeof(int) * 4, 0666|IPC_CREAT);
   if (shmid <= 0)
@@ -253,6 +255,18 @@ int main(int argc, char** argv)
      printf("Error: Number of milliseconds between child process cannot be less than one!\n");
      return 1;
     }
+    
+   if(filename == NULL)
+   {
+    printf("Error: You must enter a file name!\n");
+    return 1;
+   }
+   
+   if(file = fopen(filename, "r")) //Checking if the file exists; if it does, the program will terminate.
+   {
+    printf("That file name is taken; please enter a name that isn't taken already\n");
+    return 1;
+   }
    
    file = fopen(filename, "w");
     
@@ -261,8 +275,7 @@ int main(int argc, char** argv)
    shm[2] = 0; //Milliseconds
    int nanoholder = shm[1]; //Nanoholder will be used for remembering howmany nanoseconds have passed in each iteration
    int tableget = 0; //Will be used for checking if it is time to print the process table.
-   char str[sizeof(int)]; //Will hold the amount of seconds in a char array
-   char str2[sizeof(int)]; //Will hold the nanoseconds
+   
    
    msgbuffer buf;
    
@@ -276,6 +289,7 @@ int main(int argc, char** argv)
    
    while(stillChildrenToLaunch)
    {
+     
      incrementClock(shm, i, 0);
      
      if(abs(shm[1] - tableget) >= 500000000) //If half a second passes, the process table will print.
@@ -284,43 +298,7 @@ int main(int argc, char** argv)
       printTable(shm);
      }
      
-     if(sc > 0)
-     {
-      child = nextChild();
-      
-      buf.mType = processTable[child].pid;
-      buf.intData = processTable[child].pid;
-      
-      if(child == front(q0))
-       buf.quantum = HP;
-      else if(child == front(q1))
-       buf.quantum = MP;
-      else if(child == front(q2))
-       buf.quantum = LP;
-      
-      strcpy(buf.strData, "Sending message to child process\n");
-      
-      if(msgsnd(msqid, &buf, sizeof(msgbuffer)-sizeof(long), 0) == -1)
-      {
-       perror("msgsnd failed\n");
-       exit(1);
-      }
-      
-     if(msgrcv(msqid, &buf, sizeof(msgbuffer), getpid(), 0) == -1)
-     {
-      perror("failed to receive the message \n");
-      exit(1);
-     }
-   }
-     
-     
-     if (!isEmpty(qb))
-     {
-      if((processTable[child].eventBlockedUntilSec <= shm[0] && processTable[child].eventBlockedUntilNano <= shm[1]) || processTable[child].eventBlockedUntilSec < shm[0])
-      {
-        
-      }
-     }
+    
      
    }
    

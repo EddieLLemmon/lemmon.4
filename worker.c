@@ -103,7 +103,6 @@ int main(int argc, char **argv)
       if(decide == 2)
       {
        buf.intData = timeused(buf);
-       strcpy(buf.strData, "BLOCKED");
        if(msgsnd(msqid, &buf, sizeof(msgbuffer) - sizeof(long), 0) == -1)
        {
          perror("Error: Failed to warn of blocking\n");
@@ -126,21 +125,24 @@ int main(int argc, char **argv)
       else if (decide == 3)
       {
        buf.intData = -timeused(buf);
+       if(msgsnd(msqid, &buf, sizeof(msgbuffer) - sizeof(long), 0) == -1)
+       {
+        perror("Failed to warn about early termination!\n");
+        exit(1);
+       }
        break;
       }
       
       if(decide == 1)
       {
        buf.intData = buf.quantum;
+       if(msgsnd(msqid, &buf, sizeof(msgbuffer) - sizeof(long), 0) == -1)
+       {
+        perror("Failed to warn about complete quantum!\n");
+        exit(1);
+       }
       }
-    
 
-    }
-    
-   if(msgsnd(msqid, &buf, sizeof(msgbuffer) - sizeof(long), 0) == -1)
-    {
-     perror("Failed to send message!\n");
-     exit(1);
     }
     
    shmdt(shm); //Freeing shared memory.
