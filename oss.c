@@ -318,8 +318,8 @@ int main(int argc, char** argv)
    
    while(stillChildrenToLaunch)
    {
-     
-     incrementClock(shm, i, 0);
+     child = nextChild();
+     incrementClock(shm, i, &nanoholder, 0);
      
      if(abs(shm[1] - tableget) >= 500000000) //If half a second passes, the process table will print.
      {
@@ -327,7 +327,56 @@ int main(int argc, char** argv)
       printTable(shm);
      }
      
-    
+    int status; 
+     int pid = waitpid(-1, &status, WNOHANG); //Checks if child has terminated/
+     if (pid)//If no child has terminated, nothing will happen. If at least one child has been terminated, pid will be returned.
+      {
+       processTable[m].occupied = 0; //Initializes unused table values to zero.
+       sc--;
+       if (m < n) //If there are still children remaining, the child will launch
+        {
+         pid_t pidcount = fork();
+         if (pidcount == 0) 
+          {
+           
+           if(childready == true) //Child will only launch if it is ready
+           {
+            childready = false;
+            rsecs = getRandomsecs(t);
+            rnanosecs = getRandomnanos();
+            snprintf(str, sizeof(int), "%d", rsecs);
+            snprintf(str2, sizeof(int), "%d", rnanosecs);
+            execlp("./worker", "./worker", str, str2, NULL);
+            exit(1);
+           }
+          }
+          
+          else
+          {
+           processTable[m].occupied = 1;
+           processTable[m].pid = pidcount;
+           processTable[m].startSeconds = shm[0];
+           processTable[m].startNano = shm[1];
+           m++;
+           sc++;
+          }
+        }
+      }
+     
+     
+    if (sc == 0 && n == m) //After all children have launched, the program will end.
+      stillChildrenToLaunch = false;
+
+     if(got_signal == true) //If a signal is triggered, the table will be destroyed, and the program will end.
+      {
+        for(int j = 0; j < 20; j++)
+         {
+         if(processTable[j].pid > 0 && processTable[j].occupied == 1) //If there is a process still running, it will be killed
+          {
+           kill(processTable[j].pid, SIGKILL);
+          }
+         }
+      }
      
    }
    
