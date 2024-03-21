@@ -17,6 +17,7 @@
 
 typedef struct msgbuffer {
  int intData;
+ int quantum;
  long mType;
  char strData[100];
  } msgbuffer;
@@ -107,11 +108,6 @@ int main(int argc, char **argv)
        i = 1;
       }
       
-      else if (decide == 1)
-       {
-        buf.intData = timeused(buf);
-        i = 1;
-       }
     
      if(msgsnd(msqid, &buf, sizeof(msgbuffer) - sizeof(long), 0) == -1)
       {

@@ -47,6 +47,12 @@ struct PCB
    int eventBlockedUntilNano; // when will this process become unblocked
  };
  
+ typedef struct msgbuffer {
+ int intData;
+ long mType;
+ char strData[100];
+ } msgbuffer;
+ 
 //Queue struct and its associated functions all come from https://www.geeksforgeeks.org/introduction-and-array-implementation-of-queue/
 // A structure to represent a queue
 struct Queue {
@@ -259,7 +265,7 @@ int main(int argc, char** argv)
    signal(SIGINT, secondsignal); //Second signal
    alarm(60); //Alarm goes off after 60 seconds.
    
-   
+   msgbuffer buf;
    
    while()
    {
