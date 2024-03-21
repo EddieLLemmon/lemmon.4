@@ -298,7 +298,6 @@ int main(int argc, char** argv)
       else if(child == front(q2))
        buf.quantum = LP;
       
-      
       strcpy(buf.strData, "Sending message to child process\n");
       
       if(msgsnd(msqid, &buf, sizeof(msgbuffer)-sizeof(long), 0) == -1)
@@ -306,24 +305,21 @@ int main(int argc, char** argv)
        perror("msgsnd failed\n");
        exit(1);
       }
+      
+     if(msgrcv(msqid, &buf, sizeof(msgbuffer), getpid(), 0) == -1)
+     {
+      perror("failed to receive the message \n");
+      exit(1);
      }
+   }
      
      
      if (!isEmpty(qb))
      {
-      
-     }
-     
-     else if(!isEmpty(q0))
-     {
-     }
-     
-     else if(!isEmpty(q1))
-     {
-     }
-     
-     else if(!isEmpty(q2))
-     {
+      if((processTable[child].eventBlockedUntilSec <= shm[0] && processTable[child].eventBlockedUntilNano <= shm[1]) || processTable[child].eventBlockedUntilSec < shm[0])
+      {
+        
+      }
      }
      
    }
@@ -488,8 +484,8 @@ void help(void) //Help function
     dequeue(q);
     enqueue(qb, (int)processTable[i].pid);
     processTable[i].blocked = 1;
-    processTable[i].eventBlockedUntilSec += shm[1];
-    processTable[i].eventBlockedUntilNano += shm[1];
+    processTable[i].eventBlockedUntilSec = shm[0] + 1;
+    processTable[i].eventBlockedUntilNano = shm[1];
   
  }
  

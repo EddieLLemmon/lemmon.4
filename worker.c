@@ -25,6 +25,7 @@ typedef struct msgbuffer {
 int TBC(int, int); //Random number generater that determines if a process will complete it's timeslice, be blocked, or 
 int choice(void); //Determines what choice the process will make based on TBC
 int timeused(msgbuffer);
+int unblocktime(int*);
  
 int main(int argc, char **argv)
 {
@@ -102,21 +103,46 @@ int main(int argc, char **argv)
       if(decide == 2)
       {
        buf.intData = timeused(buf);
+       strcpy(buf.strData, "BLOCKED");
+       if(msgsnd(msqid, &buf, sizeof(msgbuffer) - sizeof(long), 0) == -1)
+       {
+         perror("Error: Failed to warn of blocking\n");
+         exit(1);
+       }
+       
+      if(msgrcv(msqid, &buf, sizeof(msgbuffer), pid, 0) == -1)
+      {
+       perror("Error: Failed to get the unblocking time\n!");
+       exit(1);
+      }
+      
+      while(1)
+       {
+        if(shm[1] >= atoi(buf.strData))
+         break;
+       }
       }
       
       else if (decide == 3)
       {
        buf.intData = -timeused(buf);
-       i = 1;
+       break;
       }
       
-    
-     if(msgsnd(msqid, &buf, sizeof(msgbuffer) - sizeof(long), 0) == -1)
+      if(decide == 1)
       {
-       perror("Failed to send message!\n");
-       exit(1);
+       buf.intData = buf.quantum;
       }
+    
+
     }
+    
+   if(msgsnd(msqid, &buf, sizeof(msgbuffer) - sizeof(long), 0) == -1)
+    {
+     perror("Failed to send message!\n");
+     exit(1);
+    }
+    
    shmdt(shm); //Freeing shared memory.
    return 0;
     
@@ -142,6 +168,11 @@ int choice(void)
 
 int timeused(msgbuffer buf)
 {
- int time = TBC(buf.intData, 1);
+ int time = TBC((buf.quantum - 1), 1);
  return time;
+}
+
+int unblocktime(int* shm)
+{
+ 
 }
