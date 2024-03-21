@@ -285,6 +285,35 @@ int main(int argc, char** argv)
    signal(SIGINT, secondsignal); //Second signal
    alarm(60); //Alarm goes off after 60 seconds.
    
+   
+   while(sc < s) //This loop is used for initializing the children; without it the program would get a shmget error.
+   {
+     pid_t pidcount = fork();
+         if (pidcount == 0)
+          {
+           if(childready == true) //New child will only launch if childready is true;
+           {
+            childready = false;
+            rsecs = getRandomsecs(t); //Produces up to t seconds.
+            rnanosecs = getRandomnanos(); //Produces a random number of nanoseconds/
+            snprintf(str, sizeof(int), "%d", rsecs);
+            snprintf(str2, sizeof(int), "%d", rnanosecs);
+            execlp("./worker", "./worker", str, str2, NULL);
+            exit(1);
+           }
+          }
+      else //If the child hasn't been terminated, it will be put in the process table.
+      {
+        processTable[m].occupied = 1;
+        processTable[m].pid = pidcount;
+        processTable[m].startSeconds = shm[0];
+        processTable[m].startNano = shm[1];
+        m++;
+        sc++;
+
+      }
+   }
+
   
    
    while(stillChildrenToLaunch)
