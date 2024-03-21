@@ -81,9 +81,11 @@ int main(int argc, char **argv)
     exit(1);
     }
 
-   int i = 0 //I is modified so that it instead will act as a flag to indicate termination;
+   int i = 1; 
+   int stopsecs = shm[0] + n; //Stop time in seconds.
+   int stopnanosecs = shm[1] + m; //Stop time for nanosecs
    
-   while(!i)
+   while(shm[0] < stopsecs || shm[1] < stopnanosecs)
     {
      int msgwait = 0;
      

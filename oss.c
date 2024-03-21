@@ -161,6 +161,7 @@ int main(int argc, char** argv)
   int sc = 0; //Counts how many children are currently running
   int finished = 0;
   char* filename;
+  pid_t getpid;
   FILE* file;
   int opt;
   int rsecs ,rnanosecs; //The random number of seconds, and nanosecondsfor each child.
@@ -266,6 +267,7 @@ int main(int argc, char** argv)
    msgbuffer buf;
    
    makeTable();
+   int child = 0;
    signal(SIGALRM, firstsignal); //First signal
    signal(SIGINT, secondsignal); //Second signal
    alarm(60); //Alarm goes off after 60 seconds.
@@ -282,9 +284,34 @@ int main(int argc, char** argv)
       printTable(shm);
      }
      
+     if(sc > 0)
+     {
+      child = nextChild();
+      
+      buf.mType = processTable[child].pid;
+      buf.intData = processTable[child].pid;
+      
+      if(child == front(q0))
+       buf.quantum = HP;
+      else if(child == front(q1))
+       buf.quantum = MP;
+      else if(child == front(q2))
+       buf.quantum = LP;
+      
+      
+      strcpy(buf.strData, "Sending message to child process\n");
+      
+      if(msgsnd(msqid, &buf, sizeof(msgbuffer)-sizeof(long), 0) == -1)
+      {
+       perror("msgsnd failed\n");
+       exit(1);
+      }
+     }
+     
      
      if (!isEmpty(qb))
      {
+      
      }
      
      else if(!isEmpty(q0))
