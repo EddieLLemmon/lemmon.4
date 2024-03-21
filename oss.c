@@ -29,7 +29,7 @@ static void firstsignal(int); //First signal is a SIGALRM signal that goes off a
 static void secondsignal(int); //Second signal is a SIGINT signal that goes off if the user presses CTRL+C
 int filenumbercounter(FILE*);
 int giveslice(int);
-void changepriority(int);
+pid_t getpriority();
 void makeTable(void);
 int PCB_Space(void);
 void launch(int, int, int, int*);
@@ -149,7 +149,7 @@ struct Queue* qb = createQueue(20); //Blocked Queue
 
 int nextChild();
 
-void block();
+void block(int*);
 
 struct PCB processTable[20];
 bool childready = true; //Will change it's value depending on if a child is ready to launch.
@@ -301,6 +301,11 @@ int main(int argc, char** argv)
      }
      
      launch(s, sc, t, shm);
+     
+     block(shm);
+     
+     pid_t priority;
+     
      
    }
    
@@ -456,13 +461,36 @@ void help(void) //Help function
   }
  }
  
- void block()
+ void block(int * shm)
  {
    int entry;
    for(int count = 0; count < 20; count++
    {
     if(qb->array[count] != -1)
     {
+     entry =  getIndex(qb->array[count]);
+     
+     if(!processTable[entry].occupied)
+      continue;
+      
+     if(shm[0] >= processTable[entry].eventBlockedUntilSec && shm[1] > processTable[entry].eventBlockedUntilNano
+     {
+      processTable[entry].blocked = 0;
+      processTable[entry].eventBlockedUntilSec = 0;
+      processTable[entry].eventBlockedUntilNano = 0;
+      
+      if(!dequeue(qb, (int)processTable[entry].pid))
+      {
+       perror("Item not Found\n");
+       exit(1);
+      }
+      
+      if(!enqueue(q1, (int)processTable[entry].pid))
+      {
+       perror("Overflow\n");
+       exit(1);
+      }
+     }
      
     }
    }
