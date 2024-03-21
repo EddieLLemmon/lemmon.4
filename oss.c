@@ -32,7 +32,7 @@ int giveslice(int);
 void changepriority(int);
 void makeTable(void);
 int PCB_Space(void);
-bool childT(int status, int size);k
+bool childT(int status, int size);
 
 struct PCB 
  {
@@ -265,13 +265,14 @@ int main(int argc, char** argv)
    {
      incrementClock(shm, i, 0);
      
-     if(isEmpty(q0)
-      {
-       if(isEmpty(q1)
-        {
-          
-        }
-      }
+     if (!isEmpty(qb))
+     
+     else if(!isEmpty(q0))
+     
+     else if(!isEmpty(q1))
+     
+     else if(!isEmpty(q2))
+     
    }
    
    fclose(file);
