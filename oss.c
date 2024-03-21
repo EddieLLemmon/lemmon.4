@@ -24,7 +24,7 @@ static void firstsignal(int); //First signal is a SIGALRM signal that goes off a
 static void secondsignal(int); //Second signal is a SIGINT signal that goes off if the user presses CTRL+C
 int getRandomsecs(int); //Function designed to get random amount of seconds in the range of 1 and the value of another number.int 
 int getRandomnanos(void); //Givs a random amount of nanoseconds
-void printTable(int*, FILE*); 
+void printTable(int*); 
 static void firstsignal(int); //First signal is a SIGALRM signal that goes off after 60 seconds pass
 static void secondsignal(int); //Second signal is a SIGINT signal that goes off if the user presses CTRL+C
 int filenumbercounter(FILE*);
@@ -50,6 +50,7 @@ struct PCB
  typedef struct msgbuffer {
  int intData;
  long mType;
+ int quantum;
  char strData[100];
  } msgbuffer;
  
@@ -260,16 +261,24 @@ int main(int argc, char** argv)
    char str[sizeof(int)]; //Will hold the amount of seconds in a char array
    char str2[sizeof(int)]; //Will hold the nanoseconds
    
+   msgbuffer buf;
+   
    makeTable();
    signal(SIGALRM, firstsignal); //First signal
    signal(SIGINT, secondsignal); //Second signal
    alarm(60); //Alarm goes off after 60 seconds.
    
-   msgbuffer buf;
+  
    
    while()
    {
      incrementClock(shm, i, 0);
+     
+     if(abs(shm[1] - tableget) >= 500000000) //If half a second passes, the process table will print.
+     {
+      tableget = shm[1];
+      printTable(shm);
+     }
      
      if (!isEmpty(qb))
      
