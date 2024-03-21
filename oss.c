@@ -429,36 +429,9 @@ void help(void) //Help function
     
  }
  
- void changepriority(int i)
+ pid_t getpriority(int i)
  {
-  if (processTable[i].priority <= 0)
-   {
-    enqueue(q0, (int)processTable[i].pid);
-    processTable[i].priority = 1;
-    return;
-   }
-   
-  if (processTable[i].priority == 1)
-  {
-   dequeue(q0);
-   enqueue(q1, (int)processTable[i].pid);
-   processTable[i].priority = 2;
-   return;
-  }
-  
-  else if (processTable[i].priority == 2)
-  {
-   dequeue(q1);
-   enqueue(q2, (int)processTable[i].pid);
-   processTable[i].priority = 3;
-   return;
-  }
-  
-  else if (processTable[i].priority == 3)
-  {
-   processTable[i].priority = 3;
-   return;
-  }
+ 
  }
  
  void block(int * shm)
