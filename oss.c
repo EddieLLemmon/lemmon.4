@@ -38,6 +38,7 @@ void pidget(pid_t, int*);
 int getIndex(pid_t)
 
 int priority;
+int stoptime;
 
 char str[sizeof(int)]; //Will hold the amount of seconds in a char array
 char str2[sizeof(int)]; //Will hold the nanoseconds
@@ -148,8 +149,8 @@ struct Queue* q2 = createQueue(20);
 struct Queue* qb = createQueue(20); //Blocked Queue
 
 int schedule(pid_t, msgbuffer, int*, int,  int, int, int);
-int receive(pid_t, msgbuffer, int*, int,  int, int);
-void updateTable(pid_t, msgbuffer);
+int receive(pid_t, msgbuffer, int*, int,  int, int, FILE*, int*);
+void updateTable(pid_t, msgbuffer, FILE*, int*);
 int nextChild();
 
 void block(int*);
@@ -444,12 +445,16 @@ void help(void) //Help function
     {
      pid = front(q1);
      priorty = 1;
+     dequeue (q1);
+     enqueue(q2, (int)pid);
     }
     
    else if(!isEmpty(q2))
     {
      pid = front(q2);
      priority = 2;
+     dequeue(q2);
+     enqueue(q3, (int)pid);
     }
     
    else if(!isEmpty(q3))
@@ -654,16 +659,19 @@ int schedule(pid_t pid, msgbuffer buf, int* shm, int i, int nano, int clock, int
  if(priority == 1)
   {
    buf.intData = HP;
+   stoptime = HP;
   }
   
  else if (priority == 2)
   {
    buf.intData = MP;
+   stoptime = HP;
   }
   
  else if(priority == 3)
   {
    buf.intData = LP;
+   stoptime = HP;
   }
   
   if (msgsnd(msqid, &buf, sizeof(msgbuffer) - sizeof(long), 0) == -1)
@@ -675,23 +683,50 @@ int schedule(pid_t pid, msgbuffer buf, int* shm, int i, int nano, int clock, int
   return 1;
 }
 
-int receive(pid_t pid, msgbuffer buf, int* shm, int i,  int nano, int msqid)
+int receive(pid_t pid, msgbuffer buf, int* shm, int i,  int nano, int msqid, FILE* file, int* sc)
 {
  
  msgbuffer rcvmsg;
  
  if(msgrcv(msqid, &rcvmsg, sizeof(msgbuffer), getpid(), 0) == -1)
  {
-  
+  perror("msgrcv to child failed\n");
+  exit(1);
  }
  
  incrementClock(shm, i, &nano, rcvmsg.intData);
- updateTable(pid, rcvmsg);
+ updateTable(pid, rcvmsg, file, &sc);
 }
 
-void updateTable(pid_t pid, msgbuffer rcvmsg)
+void updateTable(pid_t pid, msgbuffer rcvmsg, FILE* file, int* sc)
 {
  int entry = getIndex(pid);
  
- if(rcvmsg.intData
+ 
+ 
+ if(rcvmsg.intData < 0)
+  {
+   processTable[entry].occupied = 0;
+   
+   if(priority == 1)
+    {
+     dequeue(q1);
+    }
+   else if(priority == 2)
+    {
+     dequeue(q2);
+    }
+   else if(priority == 3)
+   {
+    dequeue(q3);
+   }
+  --sc;
+  
+  processTable[entry].blocked = 0;
+  }
+  
+ else if(rcvmsg.intData < stoptime)
+  {
+   
+  }
 }

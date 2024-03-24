@@ -24,7 +24,6 @@ typedef struct msgbuffer {
 int TBC(int, int); //Random number generater that determines if a process will complete it's timeslice, be blocked, or 
 int choice(void); //Determines what choice the process will make based on TBC
 int timeused(msgbuffer);
-int unblocktime(int*);
  
 int main(int argc, char **argv)
 {
@@ -87,6 +86,7 @@ int main(int argc, char **argv)
    
    while(!i)
     {
+     strcpy(buf.strData, '');
      int msgwait = 0;
      
      while(!msgwait)
@@ -102,14 +102,18 @@ int main(int argc, char **argv)
       if(decide == 2)
       {
        buf.intData = timeused(buf);
+       
       }
       
       else if (decide == 3)
       {
        buf.intData = -timeused(buf);
+       strData = 
        i = 1;
       }
-     
+      
+      else if (decide == 1)
+      i = 1;
      
      buf.mType = ppid;
      if(msgsnd(msqid, &buf, sizeof(msgbuffer) - sizeof(long), 0) == -1)
@@ -145,11 +149,6 @@ int choice(void)
 
 int timeused(msgbuffer buf)
 {
- int time = TBC((buf.quantum - 1), 1);
+ int time = TBC((buf.intData - 1), 1);
  return time;
-}
-
-int unblocktime(int* shm)
-{
- 
 }
