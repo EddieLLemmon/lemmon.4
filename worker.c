@@ -84,7 +84,7 @@ int main(int argc, char **argv)
    int stopsecs = shm[0] + n; //Stop time in seconds.
    int stopnanosecs = shm[1] + m; //Stop time for nanosecs
    
-   while(!i)
+   while(shm[0] < stopsecs || shm[1] < stopnanosecs)
     {
      strcpy(buf.strData, '');
      int msgwait = 0;
@@ -104,16 +104,15 @@ int main(int argc, char **argv)
        strcpy(buf.strData, 'BLOCKED');
       }
       
-      else if (decide == 3)
+      else if (decide == 3 )
       {
        buf.intData = -timeused(buf);
-       i = 1;
+       strcpy(buf.strData, 'EARLY');
       }
       
       else if (decide == 1)
       {
        strcpy(buf.strData, 'COMPLETE');
-       i = 1;
       }
      
      buf.mType = ppid;
@@ -121,6 +120,11 @@ int main(int argc, char **argv)
      {
       perror("Could not send message to parent!\n");
       exit(1);
+     }
+     
+    if(decide == 3)
+     {
+      break;
      }
 
     }

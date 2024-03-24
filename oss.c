@@ -150,9 +150,7 @@ struct Queue* qb = createQueue(20); //Blocked Queue
 
 int schedule(pid_t, msgbuffer, int*, int,  int, int, int);
 int receive(pid_t, msgbuffer, int*, int,  int, int, FILE*, int*);
-void updateTable(pid_t, msgbuffer, FILE*, int*);
-int nextChild();
-
+void updateTable(pid_t, msgbuffer, FILE*, int*, int*);
 void block(int*);
 
 struct PCB processTable[20];
@@ -441,25 +439,25 @@ void help(void) //Help function
  {
    pid_t pid = -1;
    
-   if(!isEmpty(q1))
+   if(!isEmpty(q0))
+    {
+     pid = front(q0);
+     priorty = 1;
+     dequeue (q0);
+     enqueue(q1, (int)pid);
+    }
+    
+   else if(!isEmpty(q1))
     {
      pid = front(q1);
-     priorty = 1;
-     dequeue (q1);
+     priority = 2;
+     dequeue(q1);
      enqueue(q2, (int)pid);
     }
     
    else if(!isEmpty(q2))
     {
      pid = front(q2);
-     priority = 2;
-     dequeue(q2);
-     enqueue(q3, (int)pid);
-    }
-    
-   else if(!isEmpty(q3))
-    {
-     pid = front(q3);
      priority = 3;
     }
    return pid;
@@ -468,7 +466,7 @@ void help(void) //Help function
  void block(int * shm)
  {
    int entry;
-   for(int count = 0; count < 20; count++
+   for(int count = 0; count < 20; count++)
    {
     if(qb->array[count] != -1)
     {
@@ -477,7 +475,7 @@ void help(void) //Help function
      if(!processTable[entry].occupied)
       continue;
       
-     if(shm[0] >= processTable[entry].eventBlockedUntilSec && shm[1] > processTable[entry].eventBlockedUntilNano
+     if(shm[0] >= processTable[entry].eventBlockedUntilSec && shm[1] > processTable[entry].eventBlockedUntilNano)
      {
       processTable[entry].blocked = 0;
       processTable[entry].eventBlockedUntilSec = 0;
@@ -528,33 +526,6 @@ int PCB_Space(void)
  }
  
  return -1;
-}
-
-int nextChild()
-{
- int child;
- 
- if(!isEmpty(q0))
- {
-  child = front(q0);
-  return child;
- }
- 
- else if (!isEmpty(q1))
- {
-  child = front(q1);
-  return child;
- }
- 
- else if (!isEmpty(q2))
- {
-  child = front(q2);
-  return child;
- }
- 
- else
- 
- else return -1;
 }
 
 int stillChildrenToLaunch()
@@ -695,16 +666,14 @@ int receive(pid_t pid, msgbuffer buf, int* shm, int i,  int nano, int msqid, FIL
  }
  
  incrementClock(shm, i, &nano, rcvmsg.intData);
- updateTable(pid, rcvmsg, file, &sc);
+ updateTable(pid, rcvmsg, file, &sc, shm);
 }
 
-void updateTable(pid_t pid, msgbuffer rcvmsg, FILE* file, int* sc)
+void updateTable(pid_t pid, msgbuffer rcvmsg, FILE* file, int* sc, int* shm)
 {
  int entry = getIndex(pid);
  
- 
- 
- if(rcvmsg.intData < 0)
+ if(rcvmsg.strData == 'EARLY')
   {
    processTable[entry].occupied = 0;
    
@@ -725,8 +694,38 @@ void updateTable(pid_t pid, msgbuffer rcvmsg, FILE* file, int* sc)
   processTable[entry].blocked = 0;
   }
   
- else if(rcvmsg.intData < stoptime)
+ else if(rcvmsg.strData == 'COMPLETE')
   {
-   
+   if(pid == front(q0))
+    {
+     dequeue(q0);
+     enqueue(q1, (int)pid);
+    }
+    
+   else if(pid == front(q1))
+    {
+     dequeue(q1);
+     enqueue(q2, (int)pid);
+    }
   }
+  
+ else if(rcvmsg.strData == 'BLOCKED')
+ {
+  processTable[entry].blocked = 1;
+  
+  if(pid == front(q0))
+   dequeue(q0);
+  
+  else if(pid == front(q1))
+   dequeue(q1);
+  
+  else if(pid == front(q2))
+   dequeue(q2);
+   
+  enqueue(qb, (int)pid)
+  
+  processTable[entry].eventBlockedUntilSec = shm[0] + 1;
+  processTable[entry].eventBlockedUntilNano = shm[1];
+  
+ }
 }
