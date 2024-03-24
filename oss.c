@@ -147,8 +147,9 @@ struct Queue* q1 = createQueue(20);
 struct Queue* q2 = createQueue(20); 
 struct Queue* qb = createQueue(20); //Blocked Queue
 
-schedule(pid_t, msgbuffer, int*, int,  int, int);
-
+int schedule(pid_t, msgbuffer, int*, int,  int, int, int);
+int receive(pid_t, msgbuffer, int*, int,  int, int);
+void updateTable(pid_t, msgbuffer);
 int nextChild();
 
 void block(int*);
@@ -311,7 +312,7 @@ int main(int argc, char** argv)
      priority = getpriority();
      
      int sendmsg;
-     sendmsg = schedule(priority, buf, shm, i, &nanoholder, 500000);
+     sendmsg = schedule(priority, buf, shm, i, &nanoholder, 500000, msqid);
      
    }
    
@@ -640,7 +641,7 @@ int getIndex(pid_t pid)
  return 0;
 }
 
-schedule(pid_t pid, msgbuffer buf, int* shm, int i, int nano, int clock)
+int schedule(pid_t pid, msgbuffer buf, int* shm, int i, int nano, int clock, int msqid)
 {
  incrementClock(shm, i, &nano, clock);
  
@@ -650,9 +651,47 @@ schedule(pid_t pid, msgbuffer buf, int* shm, int i, int nano, int clock)
  }
  
  buf.mtype = pid;
- buf.
  if(priority == 1)
   {
-   
+   buf.intData = HP;
   }
+  
+ else if (priority == 2)
+  {
+   buf.intData = MP;
+  }
+  
+ else if(priority == 3)
+  {
+   buf.intData = LP;
+  }
+  
+  if (msgsnd(msqid, &buf, sizeof(msgbuffer) - sizeof(long), 0) == -1)
+   {
+    perror("msgsnd failed\n");
+    exit(1);
+   }
+   
+  return 1;
+}
+
+int receive(pid_t pid, msgbuffer buf, int* shm, int i,  int nano, int msqid)
+{
+ 
+ msgbuffer rcvmsg;
+ 
+ if(msgrcv(msqid, &rcvmsg, sizeof(msgbuffer), getpid(), 0) == -1)
+ {
+  
+ }
+ 
+ incrementClock(shm, i, &nano, rcvmsg.intData);
+ updateTable(pid, rcvmsg);
+}
+
+void updateTable(pid_t pid, msgbuffer rcvmsg)
+{
+ int entry = getIndex(pid);
+ 
+ if(rcvmsg.intData
 }

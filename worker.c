@@ -81,11 +81,11 @@ int main(int argc, char **argv)
     exit(1);
     }
 
-   int i = 1; 
+   int i = 0; 
    int stopsecs = shm[0] + n; //Stop time in seconds.
    int stopnanosecs = shm[1] + m; //Stop time for nanosecs
    
-   while(shm[0] < stopsecs || shm[1] < stopnanosecs)
+   while(!i)
     {
      int msgwait = 0;
      
@@ -102,45 +102,21 @@ int main(int argc, char **argv)
       if(decide == 2)
       {
        buf.intData = timeused(buf);
-       if(msgsnd(msqid, &buf, sizeof(msgbuffer) - sizeof(long), 0) == -1)
-       {
-         perror("Error: Failed to warn of blocking\n");
-         exit(1);
-       }
-       
-      if(msgrcv(msqid, &buf, sizeof(msgbuffer), pid, 0) == -1)
-      {
-       perror("Error: Failed to get the unblocking time\n!");
-       exit(1);
-      }
-      
-      while(1)
-       {
-        if(shm[1] >= atoi(buf.strData))
-         break;
-       }
       }
       
       else if (decide == 3)
       {
        buf.intData = -timeused(buf);
-       if(msgsnd(msqid, &buf, sizeof(msgbuffer) - sizeof(long), 0) == -1)
-       {
-        perror("Failed to warn about early termination!\n");
-        exit(1);
-       }
-       break;
+       i = 1;
       }
-      
-      if(decide == 1)
-      {
-       buf.intData = buf.quantum;
-       if(msgsnd(msqid, &buf, sizeof(msgbuffer) - sizeof(long), 0) == -1)
-       {
-        perror("Failed to warn about complete quantum!\n");
-        exit(1);
-       }
-      }
+     
+     
+     buf.mType = ppid;
+     if(msgsnd(msqid, &buf, sizeof(msgbuffer) - sizeof(long), 0) == -1)
+     {
+      perror("Could not send message to parent!\n");
+      exit(1);
+     }
 
     }
     
