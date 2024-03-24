@@ -710,15 +710,15 @@ void updateTable(pid_t pid, msgbuffer rcvmsg, FILE* file, int* sc)
    
    if(priority == 1)
     {
-     dequeue(q1);
+     dequeue(q0);
     }
    else if(priority == 2)
     {
-     dequeue(q2);
+     dequeue(q1);
     }
    else if(priority == 3)
    {
-    dequeue(q3);
+    dequeue(q2);
    }
   --sc;
   

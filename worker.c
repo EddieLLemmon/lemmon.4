@@ -101,19 +101,20 @@ int main(int argc, char **argv)
       
       if(decide == 2)
       {
-       buf.intData = timeused(buf);
-       
+       strcpy(buf.strData, 'BLOCKED');
       }
       
       else if (decide == 3)
       {
        buf.intData = -timeused(buf);
-       strData = 
        i = 1;
       }
       
       else if (decide == 1)
-      i = 1;
+      {
+       strcpy(buf.strData, 'COMPLETE');
+       i = 1;
+      }
      
      buf.mType = ppid;
      if(msgsnd(msqid, &buf, sizeof(msgbuffer) - sizeof(long), 0) == -1)
