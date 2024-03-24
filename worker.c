@@ -17,7 +17,6 @@
 
 typedef struct msgbuffer {
  int intData;
- int quantum;
  long mType;
  char strData[100];
  } msgbuffer;

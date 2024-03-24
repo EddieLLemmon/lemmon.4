@@ -57,7 +57,6 @@ struct PCB
  typedef struct msgbuffer {
  int intData;
  long mType;
- int quantum;
  char strData[100];
  } msgbuffer;
  
@@ -444,16 +443,12 @@ void help(void) //Help function
     {
      pid = front(q1);
      priorty = 1;
-     dequeue(q1);
-     enqueue(q2, (int)pid);
     }
     
    else if(!isEmpty(q2))
     {
      pid = front(q2);
      priority = 2;
-     dequeue(q2);
-     enqueue(q3, (int)pid);
     }
     
    else if(!isEmpty(q3))
@@ -551,6 +546,8 @@ int nextChild()
   return child;
  }
  
+ else
+ 
  else return -1;
 }
 
@@ -643,7 +640,7 @@ int getIndex(pid_t pid)
  return 0;
 }
 
-schedule(pid_t pid, msgbuffer, int* shm, int i, int nano, int clock)
+schedule(pid_t pid, msgbuffer buf, int* shm, int i, int nano, int clock)
 {
  incrementClock(shm, i, &nano, clock);
  
@@ -652,8 +649,10 @@ schedule(pid_t pid, msgbuffer, int* shm, int i, int nano, int clock)
   return 0;
  }
  
- buf.mtype = process;
+ buf.mtype = pid;
+ buf.
  if(priority == 1)
   {
+   
   }
 }
