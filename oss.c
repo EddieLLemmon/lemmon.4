@@ -39,6 +39,7 @@ int getIndex(pid_t)
 
 int priority;
 int stoptime;
+FILE* file;
 
 char str[sizeof(int)]; //Will hold the amount of seconds in a char array
 char str2[sizeof(int)]; //Will hold the nanoseconds
@@ -149,8 +150,8 @@ struct Queue* q2 = createQueue(20);
 struct Queue* qb = createQueue(20); //Blocked Queue
 
 int schedule(pid_t, msgbuffer, int*, int,  int, int, int);
-int receive(pid_t, msgbuffer, int*, int,  int, int, FILE*, int*);
-void updateTable(pid_t, msgbuffer, FILE*, int*, int*);
+int receive(pid_t, msgbuffer, int*, int,  int, int, int*);
+void updateTable(pid_t, msgbuffer, int*, int*);
 void block(int*);
 
 struct PCB processTable[20];
@@ -171,7 +172,8 @@ int main(int argc, char** argv)
   int finished = 0;
   int slot = 0;
   char* filename = NULL;
-  FILE* file;
+  
+  
   int opt;
   const int key = ftok("./oss.c", 0); //Key for the program.
   int shmid = shmget(key, sizeof(int) * 4, 0666|IPC_CREAT);
@@ -654,7 +656,7 @@ int schedule(pid_t pid, msgbuffer buf, int* shm, int i, int nano, int clock, int
   return 1;
 }
 
-int receive(pid_t pid, msgbuffer buf, int* shm, int i,  int nano, int msqid, FILE* file, int* sc)
+int receive(pid_t pid, msgbuffer buf, int* shm, int i,  int nano, int msqid, int* sc)
 {
  
  msgbuffer rcvmsg;
@@ -666,10 +668,10 @@ int receive(pid_t pid, msgbuffer buf, int* shm, int i,  int nano, int msqid, FIL
  }
  
  incrementClock(shm, i, &nano, rcvmsg.intData);
- updateTable(pid, rcvmsg, file, &sc, shm);
+ updateTable(pid, rcvmsg, &sc, shm);
 }
 
-void updateTable(pid_t pid, msgbuffer rcvmsg, FILE* file, int* sc, int* shm)
+void updateTable(pid_t pid, msgbuffer rcvmsg, int* sc, int* shm)
 {
  int entry = getIndex(pid);
  
