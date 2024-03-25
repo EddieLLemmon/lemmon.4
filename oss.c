@@ -289,6 +289,7 @@ int main(int argc, char** argv)
    msgbuffer buf;
    
    makeTable();
+   int filec; //counts the number of files in the program;
    int child = 0;
    signal(SIGALRM, firstsignal); //First signal
    signal(SIGINT, secondsignal); //Second signal
@@ -296,6 +297,11 @@ int main(int argc, char** argv)
  
    while(stillChildrenToLaunch() || childrenStillRunning())
    {
+     if(filec = filenumbercounter() >= 10000)
+     {
+      printf("File has reached 10000 lines, process will now end\n");
+      break;
+     }
      
      incrementClock(i, 0);
      
@@ -666,7 +672,7 @@ int receive(pid_t pid, msgbuffer buf, int i)
   exit(1);
  }
  
- incrementClock(i, &nano, rcvmsg.intData);
+ incrementClock(i, rcvmsg.intData);
  updateTable(pid, rcvmsg);
 }
 
