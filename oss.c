@@ -533,6 +533,8 @@ void launch(int s, int t)
  if(childready == false)
   return;
   
+ int q;
+  
  if(numOfChild(s) && stillChildrenToLaunch())
  {
   pid_t p;
@@ -655,6 +657,7 @@ int receive(pid_t pid, msgbuffer buf, int i)
 void updateTable(pid_t pid, msgbuffer rcvmsg)
 {
  int entry = getIndex(pid); //Need to get the place of the pid before I can perform the rest of the function.
+ int q;
  
  if(rcvmsg.strData == 'EARLY') //If a function is terminated, it uses up all its timeslice and is deleted off of the queue.
   {
@@ -662,14 +665,17 @@ void updateTable(pid_t pid, msgbuffer rcvmsg)
    
    if(pid == front(q0))
     {
+     q = 0
      dequeue(q0);
     }
    else if(pid == front(q1))
     {
+     q = 1
      dequeue(q1);
     }
    else if(pid == front(q2))
    {
+    q = 2
     dequeue(q2);
    }
   --sc;
@@ -681,18 +687,21 @@ void updateTable(pid_t pid, msgbuffer rcvmsg)
   {
    if(pid == front(q0)) //Highest priortity will become middle priority.
     {
+     q = 0;
      dequeue(q0);
      enqueue(q1, (int)pid); 
     }
     
    else if(pid == front(q1)) //Middle Priority will become lowest priority
     {
+     q = 1;
      dequeue(q1);
      enqueue(q2, (int)pid);
     }
    
    else if(pid == front(q2)) //Processes from q2 will be placed on the back of the queue
    { 
+    q = 2;
     dequeue(q2);
     enqueue(q2, (int)pid);
    }
@@ -703,13 +712,22 @@ void updateTable(pid_t pid, msgbuffer rcvmsg)
   processTable[entry].blocked = 1;
   
   if(pid == front(q0))
+  {
+   q = 2;
    dequeue(q0);
+  }
   
   else if(pid == front(q1))
+  {
+   q = 2;
    dequeue(q1);
+  }
   
   else if(pid == front(q2))
+  {
+   q = 2;
    dequeue(q2);
+  }
    
   enqueue(qb, (int)pid)
   
