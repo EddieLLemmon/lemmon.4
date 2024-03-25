@@ -654,21 +654,21 @@ int receive(pid_t pid, msgbuffer buf, int i)
 
 void updateTable(pid_t pid, msgbuffer rcvmsg)
 {
- int entry = getIndex(pid);
+ int entry = getIndex(pid); //Need to get the place of the pid before I can perform the rest of the function.
  
- if(rcvmsg.strData == 'EARLY')
+ if(rcvmsg.strData == 'EARLY') //If a function is terminated, it uses up all its timeslice and is deleted off of the queue.
   {
    processTable[entry].occupied = 0;
    
-   if(priority == 1)
+   if(pid == front(q0))
     {
      dequeue(q0);
     }
-   else if(priority == 2)
+   else if(pid == front(q1))
     {
      dequeue(q1);
     }
-   else if(priority == 3)
+   else if(pid == front(q2))
    {
     dequeue(q2);
    }
@@ -677,22 +677,28 @@ void updateTable(pid_t pid, msgbuffer rcvmsg)
   processTable[entry].blocked = 0;
   }
   
- else if(rcvmsg.strData == 'COMPLETE')
+ else if(rcvmsg.strData == 'COMPLETE') //If a process used up all its timeslice, it will be placed in a lower priority.
   {
-   if(pid == front(q0))
+   if(pid == front(q0)) //Highest priortity will become middle priority.
     {
      dequeue(q0);
-     enqueue(q1, (int)pid);
+     enqueue(q1, (int)pid); 
     }
     
-   else if(pid == front(q1))
+   else if(pid == front(q1)) //Middle Priority will become lowest priority
     {
      dequeue(q1);
      enqueue(q2, (int)pid);
     }
+   
+   else if(pid == front(q2)) //Processes from q2 will be placed on the back of the queue
+   { 
+    dequeue(q2);
+    enqueue(q2, (int)pid);
+   }
   }
   
- else if(rcvmsg.strData == 'BLOCKED')
+ else if(rcvmsg.strData == 'BLOCKED') //If a process gets blocked, it will be placed in the blocked queue.
  {
   processTable[entry].blocked = 1;
   
