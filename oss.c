@@ -28,7 +28,6 @@ void printTable();
 static void firstsignal(int); //First signal is a SIGALRM signal that goes off after 60 seconds pass
 static void secondsignal(int); //Second signal is a SIGINT signal that goes off if the user presses CTRL+C
 int filenumbercounter();
-int giveslice(int);
 pid_t getpriority(void);
 void makeTable(void);
 int PCB_Space(void);
@@ -152,7 +151,7 @@ struct Queue* q1 = createQueue(20);
 struct Queue* q2 = createQueue(20); 
 struct Queue* qb = createQueue(20); //Blocked Queue
 
-int schedule(pid_t, msgbuffer, int,  int, int);
+int schedule(pid_t, msgbuffer, int, int);
 int receive(pid_t, msgbuffer, int);
 void updateTable(pid_t, msgbuffer);
 void block(void);
@@ -411,26 +410,6 @@ void help(void) //Help function
    printf("\nPROGRAM ENDED: ELIMINATING ALL PROCESSES AND ENDING PROGRAM\n");
    got_signal = true;
   }
-  
- int giveslice(int priority)
- {
-  int slice;
-  
-  switch(priority)
-  {
-   case 1:
-         slice = HP;
-         break;
-   case 2:
-         slice = MP;
-         break;
-   case 3: 
-         slice = LP;
-         break;
-  }
-  
-  return slice;
- }
  
  void printTable() //Prints th oss data and data for each of the children.
  {
@@ -452,16 +431,12 @@ void help(void) //Help function
     {
      pid = front(q0);
      priorty = 1;
-     dequeue (q0);
-     enqueue(q1, (int)pid);
     }
     
    else if(!isEmpty(q1))
     {
      pid = front(q1);
      priority = 2;
-     dequeue(q1);
-     enqueue(q2, (int)pid);
     }
     
    else if(!isEmpty(q2))
@@ -490,13 +465,13 @@ void help(void) //Help function
       processTable[entry].eventBlockedUntilSec = 0;
       processTable[entry].eventBlockedUntilNano = 0;
       
-      if(!dequeue(qb, (int)processTable[entry].pid))
+      if(!dequeue(qb)
       {
        perror("Item not Found\n");
        exit(1);
       }
       
-      if(!enqueue(q1, (int)processTable[entry].pid))
+      if(!enqueue(q0, (int)processTable[entry].pid))
       {
        perror("Overflow\n");
        exit(1);
@@ -612,6 +587,7 @@ void pidget (pid_t pid)
  processTable[i].pid = pid;
  processTable[i].startSeconds = shm[0];
  processTable[i].startNano = shm[1];
+ processTable[i].blocked = 0;
 }
 
 int getIndex(pid_t pid)
@@ -624,9 +600,9 @@ int getIndex(pid_t pid)
  return 0;
 }
 
-int schedule(pid_t pid, msgbuffer buf, int i, int nano, int clock)
+int schedule(pid_t pid, msgbuffer buf, int i, int clock)
 {
- incrementClock(i, &nano, clock);
+ incrementClock(i, clock);
  
  if(pid == -1)
  {
@@ -643,13 +619,13 @@ int schedule(pid_t pid, msgbuffer buf, int i, int nano, int clock)
  else if (priority == 2)
   {
    buf.intData = MP;
-   stoptime = HP;
+   stoptime = MP;
   }
   
  else if(priority == 3)
   {
    buf.intData = LP;
-   stoptime = HP;
+   stoptime = LP;
   }
   
   if (msgsnd(msqid, &buf, sizeof(msgbuffer) - sizeof(long), 0) == -1)
