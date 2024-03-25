@@ -32,17 +32,18 @@ int giveslice(int);
 pid_t getpriority(void);
 void makeTable(void);
 int PCB_Space(void);
-void launch(int, int*);
-int numOfChild();
-void pidget(pid_t, int*);
+void launch(int, int);
+int numOfChild(int);
+void pidget(pid_t);
 int getIndex(pid_t)
 
 int priority;
 int stoptime;
 FILE* file;
-int sc = 0; //Counts how many children are currently running
-int s = 0; //Number of simultainious programs that can run
+int nanoholder;
+int sc; //Counts how many children are currently running
 int msqid;
+int *shm; //The shared memory id is an array because the system clock holds multiple values.
 
 char str[sizeof(int)]; //Will hold the amount of seconds in a char array
 char str2[sizeof(int)]; //Will hold the nanoseconds
@@ -53,7 +54,6 @@ struct PCB
    pid_t pid;
    int startSeconds;
    int startNano;
-   int timeused; //The amount of remaining time used for a process that decides to terminate early.
    int blocked; // whether process is blocked
    int eventBlockedUntilSec; // when will this process become unblocked
    int eventBlockedUntilNano; // when will this process become unblocked
@@ -152,10 +152,10 @@ struct Queue* q1 = createQueue(20);
 struct Queue* q2 = createQueue(20); 
 struct Queue* qb = createQueue(20); //Blocked Queue
 
-int schedule(pid_t, msgbuffer, int*, int,  int, int);
-int receive(pid_t, msgbuffer, int*, int,  int, int*);
+int schedule(pid_t, msgbuffer, int,  int, int);
+int receive(pid_t, msgbuffer, int);
 void updateTable(pid_t, msgbuffer);
-void block(int*);
+void block(void);
 
 struct PCB processTable[20];
 bool childready = true; //Will change it's value depending on if a child is ready to launch.
@@ -169,8 +169,9 @@ int main(int argc, char** argv)
   int t = 0; //Maximum number of seconds each child can run for.
   int i = 0; //Amount of time between each child launch
   int m = 0; //Counts how many children have terminated
+  int s = 0; //Number of simultainious programs that can run
   int nc = 0; //Keeps tract of the next child in the message queue.
-  
+  sc = 0;
   int finished = 0;
   int slot = 0;
   char* filename = NULL;
@@ -185,7 +186,6 @@ int main(int argc, char** argv)
     exit(1);
    }
    
-   int *shm; //The shared memory id is an array because the system clock holds multiple values.
    shm  = shmat(shmid, 0, 0);
    if (shm <= 0)
     {
@@ -282,7 +282,7 @@ int main(int argc, char** argv)
    shm[0] = 0; //Seconds
    shm[1] = 0; //Nanoseconds
    shm[2] = 0; //Milliseconds
-   int nanoholder = shm[1]; //Nanoholder will be used for remembering howmany nanoseconds have passed in each iteration
+   nanoholder = shm[1]; //Nanoholder will be used for remembering howmany nanoseconds have passed in each iteration
    int tableget = 0; //Will be used for checking if it is time to print the process table.
    
    
@@ -297,7 +297,7 @@ int main(int argc, char** argv)
    while(stillChildrenToLaunch() || childrenStillRunning())
    {
      
-     incrementClock(shm, i, &nanoholder, 0);
+     incrementClock(i, 0);
      
      if(abs(shm[1] - tableget) >= 500000000) //If half a second passes, the process table will print.
      {
@@ -305,16 +305,16 @@ int main(int argc, char** argv)
       printTable(shm);
      }
      
-     launch(s, sc, t, shm);
+     launch(s, t);
      
-     block(shm);
+     block();
      
      pid_t priority;
      
      priority = getpriority();
      
      int sendmsg;
-     sendmsg = schedule(priority, buf, shm, i, &nanoholder, 500000, msqid);
+     sendmsg = schedule(priority, buf, i, 500000);
      
    }
    
@@ -340,17 +340,17 @@ void help(void) //Help function
   printf("filename represents the name of the file that will be used log information about the file\n");
  }
  
- void incrementClock(int* shm, int i, int*nanoholder, int add)
+ void incrementClock(int i, int add)
  {
  
   shm[1] += 10000 + add;
  
  
-  if(abs(shm[1] - *nanoholder) >= 1000000) //One million nanoseconds is equal to a millisecond.
+  if(abs(shm[1] - nanoholder) >= 1000000) //One million nanoseconds is equal to a millisecond.
    {
     for(int i = 0; i < (shm[1] / 1000000); i++)
      shm[2] += 1;
-     *nanoholder = shm[1];
+     nanoholder = shm[1];
    }
    
   if (shm[2] >= i) //Milliseconds are used to control how often a child is launched.
@@ -466,7 +466,7 @@ void help(void) //Help function
    return pid;
  }
  
- void block(int * shm)
+ void block(void)
  {
    int entry;
    for(int count = 0; count < 20; count++)
@@ -511,7 +511,6 @@ void makeTable(void)
    processTable[i].pid = 0;
    processTable[i].startSeconds = 0;
    processTable[i].startNano = 0;
-   processTable[i].timeused = 0;
    processTable[i].blocked = 0;
    processTable[i].eventBlockedUntilSec = 0; 
    processTable[i].eventBlockedUntilNano = 0;
@@ -548,7 +547,7 @@ int childrenStillRunning()
   return 0;
 }
 
-void launch(int t, int* shm)
+void launch(int s, int t)
 {
  if(childready == false)
   return;
@@ -576,8 +575,8 @@ void launch(int t, int* shm)
   
   else
   {
-   pidget(p, shm)
-   if(!enqueue(q1, (int)p))
+   pidget(p)
+   if(!enqueue(q0, (int)p))
     {
      perror("Error: Coulnd't add child to the high priority queue!\n");
      exit(1);
@@ -588,14 +587,14 @@ void launch(int t, int* shm)
  }
 }
 
-int numOfChild()
+int numOfChild(int s)
 {
  if(sc < s)
   return 1;
  return 0;
 }
 
-void pidget (pid_t pid, int* shm)
+void pidget (pid_t pid)
 {
  int i;
  i = 0;
@@ -607,7 +606,6 @@ void pidget (pid_t pid, int* shm)
  processTable[i].pid = pid;
  processTable[i].startSeconds = shm[0];
  processTable[i].startNano = shm[1];
- processTable[i].priority = 1;
 }
 
 int getIndex(pid_t pid)
@@ -620,9 +618,9 @@ int getIndex(pid_t pid)
  return 0;
 }
 
-int schedule(pid_t pid, msgbuffer buf, int* shm, int i, int nano, int clock)
+int schedule(pid_t pid, msgbuffer buf, int i, int nano, int clock)
 {
- incrementClock(shm, i, &nano, clock);
+ incrementClock(i, &nano, clock);
  
  if(pid == -1)
  {
@@ -657,7 +655,7 @@ int schedule(pid_t pid, msgbuffer buf, int* shm, int i, int nano, int clock)
   return 1;
 }
 
-int receive(pid_t pid, msgbuffer buf, int* shm, int i,  int nano, int* sc)
+int receive(pid_t pid, msgbuffer buf, int i)
 {
  
  msgbuffer rcvmsg;
@@ -669,7 +667,7 @@ int receive(pid_t pid, msgbuffer buf, int* shm, int i,  int nano, int* sc)
  }
  
  incrementClock(i, &nano, rcvmsg.intData);
- updateTable(pid, rcvmsg, shm);
+ updateTable(pid, rcvmsg);
 }
 
 void updateTable(pid_t pid, msgbuffer rcvmsg)
