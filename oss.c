@@ -19,27 +19,30 @@
 
 
 void help(void); //Help function for if the user prints out help.
-void incrementClock(int*, int, int*, int); //The system clock used by both programs.
+void incrementClock(int, int*, int); //The system clock used by both programs.
 static void firstsignal(int); //First signal is a SIGALRM signal that goes off after 60 seconds pass
 static void secondsignal(int); //Second signal is a SIGINT signal that goes off if the user presses CTRL+C
 int getRandomsecs(int); //Function designed to get random amount of seconds in the range of 1 and the value of another number.int 
 int getRandomnanos(void); //Givs a random amount of nanoseconds
-void printTable(int*); 
+void printTable(); 
 static void firstsignal(int); //First signal is a SIGALRM signal that goes off after 60 seconds pass
 static void secondsignal(int); //Second signal is a SIGINT signal that goes off if the user presses CTRL+C
-int filenumbercounter(FILE*);
+int filenumbercounter();
 int giveslice(int);
 pid_t getpriority(void);
 void makeTable(void);
 int PCB_Space(void);
-void launch(int, int, int, int*);
-int numOfChild(int, int);
+void launch(int, int*);
+int numOfChild();
 void pidget(pid_t, int*);
 int getIndex(pid_t)
 
 int priority;
 int stoptime;
 FILE* file;
+int sc = 0; //Counts how many children are currently running
+int s = 0; //Number of simultainious programs that can run
+int msqid;
 
 char str[sizeof(int)]; //Will hold the amount of seconds in a char array
 char str2[sizeof(int)]; //Will hold the nanoseconds
@@ -149,9 +152,9 @@ struct Queue* q1 = createQueue(20);
 struct Queue* q2 = createQueue(20); 
 struct Queue* qb = createQueue(20); //Blocked Queue
 
-int schedule(pid_t, msgbuffer, int*, int,  int, int, int);
-int receive(pid_t, msgbuffer, int*, int,  int, int, int*);
-void updateTable(pid_t, msgbuffer, int*, int*);
+int schedule(pid_t, msgbuffer, int*, int,  int, int);
+int receive(pid_t, msgbuffer, int*, int,  int, int*);
+void updateTable(pid_t, msgbuffer);
 void block(int*);
 
 struct PCB processTable[20];
@@ -163,12 +166,11 @@ int childrenStillRunning();
 int main(int argc, char** argv)
 {
   int n = 0; //Number of children to be produced.
-  int s = 0; //Number of simultainious programs that can run
   int t = 0; //Maximum number of seconds each child can run for.
   int i = 0; //Amount of time between each child launch
   int m = 0; //Counts how many children have terminated
   int nc = 0; //Keeps tract of the next child in the message queue.
-  int sc = 0; //Counts how many children are currently running
+  
   int finished = 0;
   int slot = 0;
   char* filename = NULL;
@@ -191,7 +193,6 @@ int main(int argc, char** argv)
      exit(1);
     }
     
-    int msqid;
     key_t key2;
     system("touch msgq.txt");
     if ((key2 = ftok("msgq.txt", 1)) == -1) {
@@ -339,10 +340,10 @@ void help(void) //Help function
   printf("filename represents the name of the file that will be used log information about the file\n");
  }
  
- void incrementClock(int* shm, int i, int*nanoholder, int sc)
+ void incrementClock(int* shm, int i, int*nanoholder, int add)
  {
  
-  shm[1] += 10000 + sc;
+  shm[1] += 10000 + add;
  
  
   if(abs(shm[1] - *nanoholder) >= 1000000) //One million nanoseconds is equal to a millisecond.
@@ -379,7 +380,7 @@ void help(void) //Help function
   return j;
  }
  
- int filenumbercounter(FILE* file)
+ int filenumbercounter()
  {
   int count = 0;
   char c;
@@ -425,7 +426,7 @@ void help(void) //Help function
   return slice;
  }
  
- void printTable(int* shm) //Prints th oss data and data for each of the children.
+ void printTable() //Prints th oss data and data for each of the children.
  {
     printf("OSS PID: %d SysClockS: %d SysClockNano: %d\n", getpid(), shm[0], shm[1]);
     printf("Process Table\n");
@@ -547,12 +548,12 @@ int childrenStillRunning()
   return 0;
 }
 
-void launch(int s, int sc, int t, int* shm)
+void launch(int t, int* shm)
 {
  if(childready == false)
   return;
   
- if(numOfChild(s, sc) && stillChildrenToLaunch())
+ if(numOfChild(s) && stillChildrenToLaunch())
  {
   pid_t p;
   p = fork();
@@ -587,7 +588,7 @@ void launch(int s, int sc, int t, int* shm)
  }
 }
 
-int numOfChild(int s, int sc)
+int numOfChild()
 {
  if(sc < s)
   return 1;
@@ -619,7 +620,7 @@ int getIndex(pid_t pid)
  return 0;
 }
 
-int schedule(pid_t pid, msgbuffer buf, int* shm, int i, int nano, int clock, int msqid)
+int schedule(pid_t pid, msgbuffer buf, int* shm, int i, int nano, int clock)
 {
  incrementClock(shm, i, &nano, clock);
  
@@ -656,7 +657,7 @@ int schedule(pid_t pid, msgbuffer buf, int* shm, int i, int nano, int clock, int
   return 1;
 }
 
-int receive(pid_t pid, msgbuffer buf, int* shm, int i,  int nano, int msqid, int* sc)
+int receive(pid_t pid, msgbuffer buf, int* shm, int i,  int nano, int* sc)
 {
  
  msgbuffer rcvmsg;
@@ -667,11 +668,11 @@ int receive(pid_t pid, msgbuffer buf, int* shm, int i,  int nano, int msqid, int
   exit(1);
  }
  
- incrementClock(shm, i, &nano, rcvmsg.intData);
- updateTable(pid, rcvmsg, &sc, shm);
+ incrementClock(i, &nano, rcvmsg.intData);
+ updateTable(pid, rcvmsg, shm);
 }
 
-void updateTable(pid_t pid, msgbuffer rcvmsg, int* sc, int* shm)
+void updateTable(pid_t pid, msgbuffer rcvmsg)
 {
  int entry = getIndex(pid);
  
